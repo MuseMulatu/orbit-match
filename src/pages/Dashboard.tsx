@@ -29,7 +29,7 @@ const generateStars = (count: number) => {
   }));
 };
 
-const stars = generateStars(100);
+const stars = generateStars(30);
 
 // --- CELESTIAL BACKGROUND (centered planets + varied slow orbits + fast planets + starfield) ---
 const CelestialBackground = () => (
