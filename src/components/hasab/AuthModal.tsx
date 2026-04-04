@@ -1,74 +1,68 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, User, Shield } from 'lucide-react';
-import { useApp } from '@/context/AppContext';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api';
 
-// Define standard types based on our backend response
-interface AuthResponse {
-  success: boolean;
-  token: string;
-  user: { id: string; requires_demographics: boolean };
-}
-
-export function AuthModal() {
-  // Use existing AppContext for modal visibility and auth state
-  const { showAuthModal, setShowAuthModal, setAuth } = useApp(); 
+export function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const navigate = useNavigate();
   
-  // UX States
-  const [step, setStep] = useState<'telegram' | 'demographics'>('telegram');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
   
-  // Demographics State
+  // Demographics State (Step 3)
   const [gender, setGender] = useState<'male' | 'female' | ''>('');
   const [birthDate, setBirthDate] = useState('');
 
-  // ------------------------------------------------------------------
-  // 🔌 HANDLER: TELEGRAM WEBHOOK AUTH
-  // ------------------------------------------------------------------
-  const handleTelegramLogin = async (telegramPayload: any = {}) => {
-    setIsLoading(true);
-    setError('');
-    
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [botUrl, setBotUrl] = useState<string | null>(null);
+
+  const handleRequestOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!phone) return;
+    setIsLoading(true); setError(null);
     try {
-      // POST to our Module 2 backend endpoint
-      const response = await api.post<AuthResponse>('/api/auth/telegram/webhook', telegramPayload);
-      
-      // Store JWT securely
-      localStorage.setItem('zabiya_token', response.token);
-      
-      if (response.user.requires_demographics) {
-        setStep('demographics'); // Trigger secondary UI smoothly
-      } else {
-        // if setAuth is in your context: setAuth(true, response.user);
-        handleClose();
-      }
+      const response = await api.post<{ success: boolean; botUrl: string }>('/api/auth/request-otp', { phone });
+      setBotUrl(response.botUrl);
+      setStep(2);
     } catch (err: any) {
-      setError(err.message || 'Authentication failed. Please try again.');
+      setError(err.message || 'Failed to request OTP. Try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ------------------------------------------------------------------
-  // 🔌 HANDLER: SUBMIT DEMOGRAPHICS
-  // ------------------------------------------------------------------
-  const handleDemographicsSubmit = async () => {
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp) return;
+    setIsLoading(true); setError(null);
+    try {
+      const response = await api.post<{ success: boolean; token: string; user: any }>('/api/auth/verify-otp', { phone, otp });
+      localStorage.setItem('zabiya_token', response.token);
+      if (response.user.requires_demographics) {
+        setStep(3); // Move to demographics
+      } else {
+        onClose();
+        window.location.href = '/dashboard'; // 👈 BULLETPROOF REDIRECT
+      }
+    } catch (err: any) {
+      setError(err.message || 'Invalid code. Try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDemographicsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!gender || !birthDate) {
-      setError('Please provide both gender and birth date to continue.');
+      setError('Please provide both gender and birth date.');
       return;
     }
-
-    setIsLoading(true);
-    setError('');
-
+    setIsLoading(true); setError(null);
     try {
-      // POST to our Module 2 demographics endpoint (auto-attaches JWT)
       await api.post('/api/auth/user/demographics', { gender, birth_date: birthDate });
-      
-      // if setAuth is in your context: setAuth(true, user); 
-      handleClose();
+      onClose();
+      window.location.href = '/dashboard'; 
     } catch (err: any) {
       setError(err.message || 'Failed to update demographics.');
     } finally {
@@ -76,133 +70,82 @@ export function AuthModal() {
     }
   };
 
-  const handleClose = () => {
-    setShowAuthModal(false);
-    // Reset states for the next time the modal opens
-    setTimeout(() => {
-      setStep('telegram');
-      setGender('');
-      setBirthDate('');
-      setError('');
-    }, 300); // Wait for exit animation to finish
-  };
+  if (!isOpen) return null;
 
   return (
-    <AnimatePresence>
-      {showAuthModal && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[200] flex items-center justify-center px-4"
-          onClick={handleClose}
-        >
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+      <div className="bg-[#111] border border-white/20 shadow-[0_0_40px_rgba(255,255,255,0.1)] rounded-3xl p-8 max-w-sm w-full relative">
+        <button onClick={onClose} className="absolute top-4 right-4 text-white/50 hover:text-white">✕</button>
 
-          {/* Modal */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-md glass-effect rounded-2xl p-8"
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Close Button */}
-            <button
-              onClick={handleClose}
-              className="absolute top-4 right-4 text-white/60 hover:text-white gentle-animation cursor-pointer"
-            >
-              <X className="w-5 h-5" />
+        <h2 className="text-2xl font-light text-white text-center mb-6">Enter Orbit</h2>
+        {error && <p className="text-red-400 text-sm text-center mb-4">{error}</p>}
+
+        {/* STEP 1: REQUEST OTP (Unchanged) */}
+        {step === 1 && (
+          <form onSubmit={handleRequestOtp} className="flex flex-col space-y-4">
+            <p className="text-sm text-white/60 text-center mb-2">We use Telegram to securely deliver your code.</p>
+            <input type="tel" placeholder="Phone Number (e.g., +251...)" value={phone} onChange={(e) => setPhone(e.target.value)} className="bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-white/50" required />
+            <button type="submit" disabled={isLoading || !phone} className="w-full bg-white text-black font-medium py-3 rounded-xl hover:bg-white/90 disabled:opacity-50 transition-all">
+              {isLoading ? 'Connecting...' : 'Request Login Code'}
             </button>
+          </form>
+        )}
 
-            {/* Icon Banner */}
-            <div className="flex justify-center mb-6">
-              <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center">
-                {step === 'telegram' ? (
-                  <Send className="w-7 h-7 text-white ml-1" /> // ml-1 to visually center the send icon
-                ) : (
-                  <User className="w-7 h-7 text-white" />
-                )}
-              </div>
-            </div>
+        {/* STEP 2: VERIFY OTP (Unchanged visually) */}
+        {step === 2 && (
+          <form onSubmit={handleVerifyOtp} className="flex flex-col space-y-4">
+            <p className="text-sm text-white/60 text-center mb-4">Code requested for {phone}.</p>
+            {botUrl && (
+              <a href={botUrl} target="_blank" rel="noreferrer" className="w-full text-center bg-[#24A1DE]/10 border border-[#24A1DE]/50 text-[#24A1DE] font-medium py-3 rounded-xl hover:bg-[#24A1DE]/20 transition-all mb-2 flex justify-center items-center gap-2">
+                <span>💬</span> Open Telegram to get code
+              </a>
+            )}
+            <input type="text" placeholder="Enter 6-digit code" value={otp} onChange={(e) => setOtp(e.target.value)} maxLength={6} className="bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-sm text-white text-center tracking-widest outline-none focus:border-white/50" required />
+<button 
+              type="submit"
+              disabled={isLoading || otp.length !== 6}
+              className="w-full bg-white text-black font-medium py-3 rounded-xl hover:bg-white/90 disabled:opacity-50 transition-all"
+            >
+              {isLoading ? 'Verifying...' : 'Verify & Login'}
+            </button>
+            
+            {/* 👈 UPGRADED CHANGE NUMBER BUTTON */}
+            <button 
+              type="button" 
+              onClick={() => {
+                setStep(1);
+                setOtp(''); // Clear the bad OTP
+                setError(null); // Clear any errors
+              }}
+              className="w-full text-sm text-white/50 hover:text-white mt-4 py-2 flex justify-center items-center gap-2 transition-colors cursor-pointer"
+            >
+              <span>←</span> Wrong number?
+            </button>
+          </form>
+        )}
 
-            {/* Dynamic Headers */}
-            <h2 className="text-2xl font-bold text-white text-center mb-2">
-              {step === 'telegram' ? 'Connect Account' : 'Complete Your Orbit'}
-            </h2>
-            <p className="text-white/60 text-center text-sm mb-8 px-2">
-              {step === 'telegram'
-                ? 'Quickly and securely verify your identity using Telegram.'
-                : 'To ensure safety and respect age firewalls, please confirm your details.'}
+        {/* STEP 3: DEMOGRAPHICS (New) */}
+        {step === 3 && (
+          <form onSubmit={handleDemographicsSubmit} className="flex flex-col space-y-4">
+             <p className="text-sm text-white/70 text-center mb-4">
+              To ensure safety and respect age firewalls, please confirm your details.
             </p>
+            <select value={gender} onChange={(e) => setGender(e.target.value as any)} className="bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 text-sm outline-none focus:border-white/50">
+              <option value="" disabled>Select Gender</option>
+              <option value="male" className="bg-[#111]">Male</option>
+              <option value="female" className="bg-[#111]">Female</option>
+            </select>
+            <input type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} className="bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 text-sm outline-none focus:border-white/50 [color-scheme:dark]" required />
+            <button type="submit" disabled={isLoading} className="w-full bg-white text-black font-medium py-3 rounded-xl hover:bg-white/90 disabled:opacity-50 transition-all mt-2">
+              {isLoading ? 'Encrypting Details...' : 'Enter Dashboard'}
+            </button>
+          </form>
+        )}
 
-            {/* Error Banner */}
-            {error && (
-              <div className="bg-red-500/20 border border-red-500/30 rounded-lg px-4 py-2 mb-6 text-red-300 text-sm text-center">
-                {error}
-              </div>
-            )}
-
-            {/* Content Forms */}
-            {step === 'telegram' ? (
-              <div className="space-y-4">
-                <button
-                  onClick={() => handleTelegramLogin({ /* Mock/Actual TG Payload */ })}
-                  disabled={isLoading}
-                  className="relative w-full bg-[#2AABEE] text-white font-semibold py-3.5 rounded-xl hover:bg-[#229ED9] gentle-animation disabled:opacity-50 cursor-pointer shadow-lg shadow-[#2AABEE]/20 flex items-center justify-center gap-2"
-                >
-                  {isLoading ? 'Entering Orbit...' : 'Continue with Telegram'}
-                </button>
-                
-                <div className="flex items-center justify-center gap-2 mt-6 text-white/40">
-                  <Shield className="w-4 h-4" />
-                  <p className="text-xs tracking-wide">
-                    Your identity is never revealed unless it's mutual.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="relative">
-                  <select 
-                    value={gender} 
-                    onChange={(e) => setGender(e.target.value as any)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-white/30 gentle-animation appearance-none cursor-pointer"
-                  >
-                    <option value="" disabled className="text-black">Select Gender</option>
-                    <option value="male" className="text-black">Male</option>
-                    <option value="female" className="text-black">Female</option>
-                  </select>
-                </div>
-
-                <input 
-                  type="date" 
-                  value={birthDate}
-                  onChange={(e) => setBirthDate(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-white/30 gentle-animation [color-scheme:dark]"
-                />
-
-                <button 
-                  disabled={isLoading}
-                  onClick={handleDemographicsSubmit}
-                  className="w-full bg-white text-black font-semibold py-3.5 rounded-xl hover:bg-white/90 gentle-animation disabled:opacity-50 cursor-pointer mt-2"
-                >
-                  {isLoading ? 'Encrypting Details...' : 'Enter Dashboard'}
-                </button>
-                
-                <div className="flex items-center justify-center gap-2 mt-4 text-white/40">
-                  <Shield className="w-4 h-4" />
-                  <p className="text-xs tracking-wide">
-                    No profiles. No browsing. Complete privacy.
-                  </p>
-                </div>
-              </div>
-            )}
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        <p className="text-xs text-white/40 text-center mt-6 tracking-wide">
+          🔒 Your identity is never revealed unless it’s mutual.
+        </p>
+      </div>
+    </div>
   );
 }

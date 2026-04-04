@@ -1,5 +1,3 @@
-//https://www.pexels.com/video/woman-smelling-petals-of-white-flower-10536487/
-
 import { motion } from 'framer-motion';
 import { Volume2, VolumeX } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
@@ -7,22 +5,41 @@ import { useApp } from '@/context/AppContext';
 
 export function HeroSection() {
   const { setShowAuthModal } = useApp();
-  const [isMuted, setIsMuted] = useState(true);
+  // 1. Change initial state to false (unmuted by default)
+  const [isMuted, setIsMuted] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.volume = 0;
-      videoRef.current.muted = true;
-      videoRef.current.defaultMuted = true;
-      videoRef.current.play().catch(() => {});
+    const video = videoRef.current;
+    if (video) {
+      // 2. Set initial volume and unmute
+      video.volume = 0.5;
+      video.muted = false;
+      video.defaultMuted = false;
+
+      // 3. Attempt to play with sound
+      const playPromise = video.play();
+      
+      if (playPromise !== undefined) {
+        playPromise.catch((error) => {
+          // 4. BROWSER AUTOPLAY POLICY FALLBACK
+          // If the browser blocks unmuted autoplay, we catch the error 
+          // and fall back to playing it muted so the visual background still works.
+          console.warn("Autoplay with sound was blocked. Falling back to muted autoplay.", error);
+          setIsMuted(true);
+          video.muted = true;
+          video.volume = 0;
+          video.play().catch(() => {
+             // Handle extremely strict browsers that block even muted autoplay
+          });
+        });
+      }
     }
   }, []);
 
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.muted = isMuted;
-      // You can adjust the volume level of the Yung Kai song here
       videoRef.current.volume = isMuted ? 0 : 0.5;
     }
   }, [isMuted]);
@@ -30,20 +47,15 @@ export function HeroSection() {
   return (
     <div className="relative h-screen w-full overflow-hidden bg-black">
       {/* Video Background */}
- {/* Video Background */}
       <video
         ref={videoRef}
         className="absolute inset-0 w-full h-full object-cover scale-110 opacity-50"
         autoPlay
-        muted={isMuted} // Let React control the muted state directly
+        muted={isMuted}
         loop
         playsInline
       >
-        {/* Point to the local file in your public folder */}
-        {/* If your file is public/videos/bg-video.mp4, the path is /videos/bg-video.mp4 */}
         <source src="/videos/bg-video.mp4" type="video/mp4" />
-        
-        {/* Fallback text if the browser doesn't support the video tag */}
         Your browser does not support the video tag.
       </video>
 

@@ -7,15 +7,19 @@ const TOKEN_KEY = 'zabiya_token';
  * Standardized response handler.
  * Automatically catches 401s, clears invalid sessions, and safely parses errors.
  */
-async function handleResponse<T>(response: Response): Promise<T> {
-  if (response.status === 401) {
-    // Intercept unauthorized requests, clear stale token, and push to landing
-    localStorage.removeItem(TOKEN_KEY);
-    window.location.href = '/'; 
-    throw new Error('Unauthorized');
-  }
 
+async function handleResponse<T>(response: Response): Promise<T> {
   const data = await response.json().catch(() => ({}));
+
+  if (response.status === 401) {
+    // FIX: Only hard-redirect if the 401 did NOT happen on an auth route
+    if (!response.url.includes('/auth/')) {
+      localStorage.removeItem(TOKEN_KEY);
+      window.location.href = '/'; 
+    }
+    // Throw the error so the modal stays open and shows the red text!
+    throw new Error(data.error || 'Unauthorized');
+  }
 
   if (!response.ok) {
     throw new Error(data.error || data.message || 'An error occurred during the request.');

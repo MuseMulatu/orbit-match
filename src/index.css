@@ -204,6 +204,17 @@
     transform: translateX(-50%) translateY(-50%);
     object-fit: cover;
   }
+
+  @keyframes twinkle {
+  0% { 
+    opacity: 0.3; 
+    transform: scale(0.9); 
+  }
+  100% { 
+    opacity: 0.8; 
+    transform: scale(1.1); 
+  }
+}
   
   /* Advanced Animations */
   @keyframes float-gentle {
@@ -297,7 +308,7 @@
       transform: rotate(3deg) translateY(-2px); 
     }
   }
-  
+
   @keyframes photoSway3 {
     0%, 100% { 
       transform: rotate(1deg) translateY(0px); 
