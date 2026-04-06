@@ -9,7 +9,7 @@ import { MatchModal } from '@/components/hasab/MatchModal';
 
 // --- TYPES ---
 interface DashboardData {
-  wallet: { intent_slots: number; alias_slots: number };
+  wallet: { slots: number };
   aliases: Array<{ id: string; type: string; verified: boolean; created_at: string }>;
   active_intents_count: number;
   // 👈 ADDED active_intents array
@@ -456,6 +456,30 @@ const handleUnblock = async (blockId: string) => {
                     </p>
                   </div>
                 )}
+              {/* --- MISSED MATCH PREVENTION SLAB --- */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35 }}
+                className="group relative bg-[#140a04] border-2 border-[#3d1c09] rounded-[2rem] p-7 shadow-2xl overflow-hidden transition-all duration-500"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-orange-600/10 rounded-full blur-[40px]" />
+                
+                <h3 className="text-white font-bold tracking-wide mb-2 flex items-center gap-2">
+                  <span className="text-xl">⚠️</span> Don’t Miss a Match
+                </h3>
+                
+                <p className="text-orange-200/80 text-sm leading-relaxed mb-6 font-medium">
+                  If they used your different number or username than the one you added, you won’t see each other — even if you both liked each other.
+                </p>
+                
+                <button 
+                  onClick={() => alert("Wire this to your addAlias modal/flow!")}
+                  className="w-full bg-[#1a0c04] border border-[#3d1c09] text-orange-400 font-bold py-3.5 rounded-xl hover:bg-orange-600 hover:text-white transition-all duration-300 cursor-pointer flex justify-center items-center gap-2 text-sm shadow-[0_4px_15px_rgba(0,0,0,0.5)]"
+                >
+                  <ShieldCheck className="w-4 h-4" /> Add Your Another Contacts (2 Slots)
+                </button>
+              </motion.div>
 
                 {/* EXPIRED INTENTS */}
                 {data.expired_intents && data.expired_intents.length > 0 && (
@@ -510,22 +534,24 @@ const handleUnblock = async (blockId: string) => {
                   
                   <div className="mb-4">
                     <div className="text-6xl font-light text-white tracking-tighter flex items-baseline gap-2 drop-shadow-[0_0_15px_rgba(249,115,22,0.3)]">
-                      {data.wallet.intent_slots}
-                      <span className="text-sm font-bold tracking-widest text-orange-900 uppercase">Slots</span>
+                      {data.wallet.slots}
+                      <span className="text-sm font-bold tracking-widest text-orange-900 uppercase">
+                        Slots Left
+                      </span>
                     </div>
                     
-                    <div className="w-full h-2.5 bg-[#050301] border border-[#1a0c04] rounded-full mt-5 overflow-hidden shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)] p-[1px]">
+                    <div className="w-full h-2.5 bg-[#050301] border border-[#1a0c04] rounded-full mt-5 overflow-hidden p-[1px]">
                       <div 
                         className="h-full bg-gradient-to-r from-orange-600 to-amber-400 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(245,158,11,0.8)]"
-                        style={{ width: `${Math.min(100, (data.wallet.intent_slots / 10) * 100)}%` }}
+                        style={{ width: `${Math.min(100, (data.wallet.slots / 6) * 100)}%` }}
                       />
                     </div>
                   </div>
-                  
-                  {data.wallet.intent_slots <= 1 && (
-                    <p className="text-[10px] text-red-500 animate-pulse font-bold tracking-widest uppercase flex items-center gap-2 mt-4 bg-red-950/30 p-2 rounded-lg border border-red-900/50">
-                      <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,1)]"></span>
-                      You’re running low. Add more slots.
+
+                  {data.wallet.slots <= 1 && (
+                    <p className="text-[11px] text-red-400 font-semibold tracking-wide flex items-start gap-2 mt-4 bg-red-950/30 p-3 rounded-lg border border-red-900/50 leading-snug">
+                      <span className="w-2 h-2 mt-1 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,1)]"></span>
+                      You’re down to your last chance. If they use a different number or account, you won’t appear to each other.
                     </p>
                   )}
 
@@ -682,27 +708,34 @@ const handleUnblock = async (blockId: string) => {
                 <h2 className="text-2xl font-semibold text-white mb-2">Add More <span className="text-orange-500">Slots</span></h2>
                 <p className="text-orange-200/60 text-sm mb-8 font-medium tracking-wide">Add more slots to keep making additions.</p>
                 
-                <div className="space-y-4">
+<div className="space-y-4">
+                  {/* STARTER PACKAGE */}
                   <button 
                     onClick={() => handleBuySlots('basic')}
                     disabled={isInitializingPayment}
-                    className="w-full bg-[#050301] border-2 border-[#1a0c04] p-5 rounded-2xl hover:border-orange-900/50 hover:bg-[#0a0602] transition-all flex justify-between items-center text-left cursor-pointer group shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]"
+                    className="w-full bg-[#050301] border-2 border-[#1a0c04] p-5 rounded-2xl hover:border-orange-900/50 hover:bg-[#0a0602] transition-all flex justify-between items-center text-left cursor-pointer group"
                   >
                     <div>
-                      <p className="text-white/70 font-semibold group-hover:text-white transition">3 Slots</p>
-                      <p className="text-[10px] text-orange-400/70 uppercase tracking-widest font-bold mt-1">Basic</p>
+                      <p className="text-white/70 font-semibold group-hover:text-white transition">Starter</p>
+                      <p className="text-[10px] text-orange-900/50 uppercase tracking-widest font-bold mt-1">3 Slots</p>
                     </div>
                     <p className="text-orange-500 font-mono bg-[#140a04] border border-[#3d1c09] px-3 py-1.5 rounded-xl text-xs font-bold">149 ETB</p>
                   </button>
                   
+                  {/* BEST VALUE PACKAGE */}
                   <button 
                     onClick={() => handleBuySlots('premium')}
                     disabled={isInitializingPayment}
-                    className="w-full bg-[#11111a] border-2 border-[#2a2a3a] text-white p-5 rounded-2xl hover:bg-indigo-600 hover:border-indigo-500 transition-all flex justify-between items-center text-left cursor-pointer shadow-[0_10px_20px_rgba(0,0,0,0.3)]"
+                    className="relative w-full bg-[#11111a] border-2 border-[#2a2a3a] text-white p-5 rounded-2xl hover:bg-indigo-600 hover:border-indigo-500 transition-all flex justify-between items-center text-left cursor-pointer shadow-[0_10px_20px_rgba(0,0,0,0.3)]"
                   >
+                    {/* Value Badge */}
+                    <div className="absolute -top-3 -right-2 bg-gradient-to-r from-orange-500 to-amber-500 text-black text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg">
+                      Best Value
+                    </div>
+
                     <div>
-                      <p className="font-semibold text-indigo-100">5 Slots</p>
-                      <p className="text-[10px] text-indigo-300 uppercase tracking-widest font-bold mt-1">Best Value</p>
+                      <p className="font-semibold text-indigo-100">Deep Space Pack</p>
+                      <p className="text-[10px] text-indigo-300/80 uppercase tracking-widest font-bold mt-1">6 Slots (Double Output)</p>
                     </div>
                     <p className="font-mono bg-[#0a0a0f] border border-[#1c1c28] text-indigo-300 px-3 py-1.5 rounded-xl text-xs font-bold shadow-inner">199 ETB</p>
                   </button>
