@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, ShieldCheck, LogOut, Sparkles, CreditCard, X, Globe, Clock, User, Zap, Heart, RefreshCw, Smartphone, Send, Camera, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -12,14 +12,13 @@ interface DashboardData {
   wallet: { slots: number };
   aliases: Array<{ id: string; type: string; verified: boolean; created_at: string }>;
   active_intents_count: number;
-  // 👈 ADDED active_intents array
   active_intents?: Array<{ id: string; target: string; type: string; created_at: string }>; 
   expired_intents: Array<{ id: string; target_hash: string; expires_at: string }>;
   matches: Array<{ match_id: string; matched_at: string; contact: any }>;
   blocked_connections: Array<{ block_id: string; blocked_at: string; contact: any }>;
 }
 
-// --- STARFIELD GENERATOR (static, no re-renders) ---
+// --- STARFIELD GENERATOR ---
 const generateStars = (count: number) => {
   return Array.from({ length: count }, () => ({
     left: `${Math.random() * 100}%`,
@@ -30,19 +29,15 @@ const generateStars = (count: number) => {
   }));
 };
 
-
-
 const stars = generateStars(30);
 
-// --- CELESTIAL BACKGROUND (centered planets + varied slow orbits + fast planets + starfield) ---
+// --- CELESTIAL BACKGROUND ---
 const CelestialBackground = () => (
   <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-[#020208]">
-    {/* Deep nebula glows */}
     <div className="absolute w-[800px] h-[800px] bg-indigo-900/20 rounded-full blur-[150px] animate-pulse" style={{ animationDuration: '12s' }} />
     <div className="absolute w-[600px] h-[600px] bg-purple-900/10 rounded-full blur-[120px] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
     <div className="absolute w-[400px] h-[400px] bg-pink-900/5 rounded-full blur-[100px] left-1/4 top-3/4" />
 
-    {/* Starfield */}
     <div className="absolute inset-0">
       {stars.map((star, i) => (
         <div
@@ -55,82 +50,45 @@ const CelestialBackground = () => (
             height: star.size,
             opacity: star.opacity,
             animation: `twinkle ${5 + Math.random() * 8}s infinite alternate ease-in-out`,
-            animationDelay: star.animationDelay, // Added delay for natural offset
+            animationDelay: star.animationDelay,
           }}
         />
       ))}
     </div>
 
-    {/* Orbit 1 - Indigo (Solid, fading arc) */}
+    {/* Orbit 1 */}
     <div className="absolute left-1/2 top-1/2 w-[120vw] max-w-[1100px] aspect-square -translate-x-1/2 -translate-y-1/2">
-      {/* Slow visible orbit ring */}
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 500, repeat: Infinity, ease: "linear" }}
-        className="absolute inset-0 rounded-full border-[1px] border-solid border-t-indigo-500/30 border-r-indigo-500/5 border-b-transparent border-l-transparent"
-      />
-      {/* Faster celestial body */}
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 180, repeat: Infinity, ease: "linear" }}
-        className="absolute inset-0"
-      >
+      <motion.div animate={{ rotate: 360 }} transition={{ duration: 500, repeat: Infinity, ease: "linear" }} className="absolute inset-0 rounded-full border-[1px] border-solid border-t-indigo-500/30 border-r-indigo-500/5 border-b-transparent border-l-transparent" />
+      <motion.div animate={{ rotate: 360 }} transition={{ duration: 180, repeat: Infinity, ease: "linear" }} className="absolute inset-0">
         <div className="absolute left-1/2 top-0 w-6 h-6 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 shadow-[0_0_20px_rgba(99,102,241,0.5)]" />
       </motion.div>
     </div>
 
-    {/* Orbit 2 - Purple (Solid, fading arc on opposite side) */}
+    {/* Orbit 2 */}
     <div className="absolute left-1/2 top-1/2 w-[100vw] max-w-[900px] aspect-square -translate-x-1/2 -translate-y-1/2">
-      <motion.div
-        animate={{ rotate: -360 }}
-        transition={{ duration: 600, repeat: Infinity, ease: "linear" }}
-        className="absolute inset-0 rounded-full border-[1px] border-solid border-t-transparent border-r-purple-500/20 border-b-purple-500/5 border-l-transparent"
-      />
-      <motion.div
-        animate={{ rotate: -360 }}
-        transition={{ duration: 140, repeat: Infinity, ease: "linear" }}
-        className="absolute inset-0"
-      >
+      <motion.div animate={{ rotate: -360 }} transition={{ duration: 600, repeat: Infinity, ease: "linear" }} className="absolute inset-0 rounded-full border-[1px] border-solid border-t-transparent border-r-purple-500/20 border-b-purple-500/5 border-l-transparent" />
+      <motion.div animate={{ rotate: -360 }} transition={{ duration: 140, repeat: Infinity, ease: "linear" }} className="absolute inset-0">
         <div className="absolute left-1/2 top-0 w-5 h-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-purple-400 to-fuchsia-600 shadow-[0_0_15px_rgba(168,85,247,0.5)]" />
       </motion.div>
     </div>
 
-    {/* Orbit 3 - Pink (Solid, subtle trailing fade) */}
+    {/* Orbit 3 */}
     <div className="absolute left-1/2 top-1/2 w-[80vw] max-w-[700px] aspect-square -translate-x-1/2 -translate-y-1/2">
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 400, repeat: Infinity, ease: "linear" }}
-        className="absolute inset-0 rounded-full border-[1px] border-solid border-t-transparent border-r-transparent border-b-pink-500/5 border-l-pink-500/30"
-      />
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 100, repeat: Infinity, ease: "linear" }}
-        className="absolute inset-0"
-      >
+      <motion.div animate={{ rotate: 360 }} transition={{ duration: 400, repeat: Infinity, ease: "linear" }} className="absolute inset-0 rounded-full border-[1px] border-solid border-t-transparent border-r-transparent border-b-pink-500/5 border-l-pink-500/30" />
+      <motion.div animate={{ rotate: 360 }} transition={{ duration: 100, repeat: Infinity, ease: "linear" }} className="absolute inset-0">
         <div className="absolute left-1/2 top-0 w-4 h-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-pink-400 to-rose-600 shadow-[0_0_12px_rgba(244,114,182,0.5)]" />
       </motion.div>
     </div>
 
-    {/* Orbit 4 - Faint amber (Outer ring, solid very faint arc) */}
+    {/* Orbit 4 */}
     <div className="absolute left-1/2 top-1/2 w-[140vw] max-w-[1300px] aspect-square -translate-x-1/2 -translate-y-1/2">
-      <motion.div
-        animate={{ rotate: -360 }}
-        transition={{ duration: 800, repeat: Infinity, ease: "linear" }}
-        className="absolute inset-0 rounded-full border-[1px] border-solid border-t-amber-500/10 border-r-transparent border-b-transparent border-l-amber-500/5 opacity-60"
-      />
-      <motion.div
-        animate={{ rotate: -360 }}
-        transition={{ duration: 240, repeat: Infinity, ease: "linear" }}
-        className="absolute inset-0"
-      >
+      <motion.div animate={{ rotate: -360 }} transition={{ duration: 800, repeat: Infinity, ease: "linear" }} className="absolute inset-0 rounded-full border-[1px] border-solid border-t-amber-500/10 border-r-transparent border-b-transparent border-l-amber-500/5 opacity-60" />
+      <motion.div animate={{ rotate: -360 }} transition={{ duration: 240, repeat: Infinity, ease: "linear" }} className="absolute inset-0">
         <div className="absolute left-1/2 top-0 w-3 h-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-amber-400/60 to-orange-500/40 shadow-[0_0_10px_rgba(245,158,11,0.3)]" />
       </motion.div>
     </div>
   </div>
 );
-
-// Add keyframes for twinkling stars (put in global CSS or Tailwind config)
-// @keyframes twinkle { 0% { opacity: 0.2; } 100% { opacity: 0.8; } }
 
 export default function Dashboard() {
   const { logout } = useApp();
@@ -146,39 +104,39 @@ export default function Dashboard() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isInitializingPayment, setIsInitializingPayment] = useState(false);
 
-const handleRevokeIntent = async (id: string) => {
-  if (window.confirm("Removing this intent will permanently break the connection. (Consumed slots are not refunded). Continue?")) {
+  const handleRevokeIntent = async (id: string) => {
+    if (window.confirm("Removing this intent will permanently break the connection. (Consumed slots are not refunded). Continue?")) {
+      try {
+        await api.post(`/api/intent/${id}/revoke`);
+        toast({ title: 'Intent Revoked', description: 'Your intent has been permanently removed.' });
+        fetchDashboard();
+      } catch (err: any) {
+        toast({ title: 'Error', description: err.message, variant: 'destructive' });
+      }
+    }
+  };
+
+  const handleBlockMatch = async (matchId: string) => {
+    if (window.confirm("This will permanently remove this match. Are you sure? They won't be notified of the removal.")) {
+      try {
+        await api.post('/api/match/block', { matchId });
+        toast({ title: 'Match removed', description: 'User has been blocked.' });
+        fetchDashboard();
+      } catch (err: any) {
+        toast({ title: 'Error', description: err.message, variant: 'destructive' });
+      }
+    }
+  };
+
+  const handleUnblock = async (blockId: string) => {
     try {
-      await api.post(`/api/intent/${id}/revoke`);
-      toast({ title: 'Intent Revoked', description: 'Your intent has been permanently removed.' });
+      await api.post('/api/match/unblock', { blockId });
+      toast({ title: 'User Unblocked', description: 'They can now be matched again if you both submit intents.' });
       fetchDashboard();
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
     }
-  }
-};
-
-const handleBlockMatch = async (matchId: string) => {
-  if (window.confirm("This will permanently remove this match. Are you sure? They won't be notified of the removal.")) {
-    try {
-      await api.post('/api/match/block', { matchId });
-      toast({ title: 'Match removed', description: 'User has been blocked.' });
-      fetchDashboard();
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
-    }
-  }
-};
-
-const handleUnblock = async (blockId: string) => {
-  try {
-    await api.post('/api/match/unblock', { blockId });
-    toast({ title: 'User Unblocked', description: 'They can now be matched again if you both submit intents.' });
-    fetchDashboard();
-  } catch (err: any) {
-    toast({ title: 'Error', description: err.message, variant: 'destructive' });
-  }
-};
+  };
 
   const fetchDashboard = async () => {
     try {
@@ -198,6 +156,7 @@ const handleUnblock = async (blockId: string) => {
     } else {
       fetchDashboard();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   const handleLogout = () => {
@@ -228,7 +187,7 @@ const handleUnblock = async (blockId: string) => {
         fetchDashboard(); 
       }
     } catch (error: any) {
-      if (error.message.includes('Payment Required') || error.message.includes('slots')) {
+      if (error.message?.includes('Payment Required') || error.message?.includes('slots')) {
         setShowPaymentModal(true);
       } else {
         toast({ 
@@ -382,9 +341,8 @@ const handleUnblock = async (blockId: string) => {
                   <h3 className="text-white/90 font-semibold tracking-wide">Current Orbit Status</h3>
                 </div>
                 
-
-              {/* ACTIVE INTENTS LIST */}
-                {data.active_intents && data.active_intents.length > 0 ? (
+                {/* ACTIVE INTENTS LIST */}
+                {data?.active_intents && data.active_intents.length > 0 ? (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between mb-4 bg-[#081212] border border-[#122b2b] rounded-xl p-3 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]">
                       <p className="text-emerald-100/70 text-xs font-light">
@@ -430,8 +388,7 @@ const handleUnblock = async (blockId: string) => {
                       ))}
                     </ul>
                   </div>
-                ) : data.active_intents_count > 0 ? (
-                  /* FALLBACK: If backend hasn't been updated yet but intents exist */
+                ) : data?.active_intents_count > 0 ? (
                   <div className="bg-[#081212] border-2 border-[#122b2b] rounded-2xl p-5 flex items-start gap-4 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]">
                     <div className="p-2 bg-[#102424] rounded-full border border-[#1a3a3a]">
                       <Globe className="w-4 h-4 text-emerald-400" />
@@ -446,7 +403,6 @@ const handleUnblock = async (blockId: string) => {
                     </div>
                   </div>
                 ) : (
-                  /* EMPTY STATE */
                   <div className="flex flex-col items-center justify-center py-10 border-2 border-dashed border-[#142e2e] rounded-2xl bg-[#030606]">
                     <div className="w-12 h-12 mb-3 rounded-full bg-[#0a1414] flex items-center justify-center border border-[#142e2e]">
                       <Zap className="w-5 h-5 text-emerald-900" />
@@ -456,6 +412,34 @@ const handleUnblock = async (blockId: string) => {
                     </p>
                   </div>
                 )}
+
+                {/* EXPIRED INTENTS */}
+                {data?.expired_intents && data.expired_intents.length > 0 && (
+                  <div className="mt-8 pt-6 border-t-2 border-[#0f1f1f] relative">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Clock className="w-3 h-3 text-amber-500" />
+                      <h3 className="text-[10px] text-amber-500 uppercase tracking-[0.2em] font-bold">Expired Additions</h3>
+                    </div>
+                    <ul className="space-y-3">
+                      {data.expired_intents.map((intent) => (
+                        <li key={intent.id} className="flex justify-between items-center bg-[#0a0a0a] p-4 rounded-2xl border-2 border-[#1c1a15] hover:border-amber-900/50 transition-all group/expired shadow-[inset_0_2px_5px_rgba(0,0,0,0.5)]">
+                          <span className="text-xs text-white/40 flex items-center gap-3 font-mono font-medium">
+                            <Lock className="w-3 h-3 text-amber-700" /> 
+                            {intent.target_hash.substring(0, 10)}...
+                          </span>
+                          <button 
+                            onClick={() => toast({ title: 'Cosmic Renewal', description: 'Intent renewal will be available shortly.' })}
+                            className="text-[10px] uppercase font-bold tracking-widest bg-[#14120a] border border-[#2e2614] hover:bg-amber-900/40 text-amber-500/80 hover:text-amber-400 px-4 py-2 rounded-xl transition-all flex items-center gap-2 cursor-pointer shadow-lg"
+                          >
+                            <RefreshCw className="w-3 h-3" /> Renew
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </motion.div>
+
               {/* --- MISSED MATCH PREVENTION SLAB --- */}
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
@@ -481,32 +465,6 @@ const handleUnblock = async (blockId: string) => {
                 </button>
               </motion.div>
 
-                {/* EXPIRED INTENTS */}
-                {data.expired_intents && data.expired_intents.length > 0 && (
-                  <div className="mt-8 pt-6 border-t-2 border-[#0f1f1f] relative">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Clock className="w-3 h-3 text-amber-500" />
-                      <h3 className="text-[10px] text-amber-500 uppercase tracking-[0.2em] font-bold">Expired Additions</h3>
-                    </div>
-                    <ul className="space-y-3">
-                      {data.expired_intents.map((intent) => (
-                        <li key={intent.id} className="flex justify-between items-center bg-[#0a0a0a] p-4 rounded-2xl border-2 border-[#1c1a15] hover:border-amber-900/50 transition-all group/expired shadow-[inset_0_2px_5px_rgba(0,0,0,0.5)]">
-                          <span className="text-xs text-white/40 flex items-center gap-3 font-mono font-medium">
-                            <Lock className="w-3 h-3 text-amber-700" /> 
-                            {intent.target_hash.substring(0, 10)}...
-                          </span>
-                          <button 
-                            onClick={() => toast({ title: 'Cosmic Renewal', description: 'Intent renewal will be available shortly.' })}
-                            className="text-[10px] uppercase font-bold tracking-widest bg-[#14120a] border border-[#2e2614] hover:bg-amber-900/40 text-amber-500/80 hover:text-amber-400 px-4 py-2 rounded-xl transition-all flex items-center gap-2 cursor-pointer shadow-lg"
-                          >
-                            <RefreshCw className="w-3 h-3" /> Renew
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </motion.div>
             </div>
 
             {/* RIGHT COLUMN */}
@@ -534,7 +492,7 @@ const handleUnblock = async (blockId: string) => {
                   
                   <div className="mb-4">
                     <div className="text-6xl font-light text-white tracking-tighter flex items-baseline gap-2 drop-shadow-[0_0_15px_rgba(249,115,22,0.3)]">
-                      {data.wallet.slots}
+                      {data?.wallet?.slots || 0}
                       <span className="text-sm font-bold tracking-widest text-orange-900 uppercase">
                         Slots Left
                       </span>
@@ -543,12 +501,12 @@ const handleUnblock = async (blockId: string) => {
                     <div className="w-full h-2.5 bg-[#050301] border border-[#1a0c04] rounded-full mt-5 overflow-hidden p-[1px]">
                       <div 
                         className="h-full bg-gradient-to-r from-orange-600 to-amber-400 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(245,158,11,0.8)]"
-                        style={{ width: `${Math.min(100, (data.wallet.slots / 6) * 100)}%` }}
+                        style={{ width: `${Math.min(100, ((data?.wallet?.slots || 0) / 6) * 100)}%` }}
                       />
                     </div>
                   </div>
 
-                  {data.wallet.slots <= 1 && (
+                  {data?.wallet?.slots !== undefined && data.wallet.slots <= 1 && (
                     <p className="text-[11px] text-red-400 font-semibold tracking-wide flex items-start gap-2 mt-4 bg-red-950/30 p-3 rounded-lg border border-red-900/50 leading-snug">
                       <span className="w-2 h-2 mt-1 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,1)]"></span>
                       You’re down to your last chance. If they use a different number or account, you won’t appear to each other.
@@ -578,14 +536,14 @@ const handleUnblock = async (blockId: string) => {
                     <Heart className="w-4 h-4 text-pink-500" />
                   </div>
                   <h3 className="text-white/90 font-semibold tracking-wide">Mutual Gravity</h3>
-                  {data.matches.length > 0 && (
+                  {data?.matches && data.matches.length > 0 && (
                     <span className="text-[10px] font-bold bg-[#3d162a] border border-[#5c2240] text-pink-400 px-2 py-1 rounded-md ml-auto">
                       {data.matches.length}
                     </span>
                   )}
                 </div>
                 
-                {data.matches.length > 0 ? (
+                {data?.matches && data.matches.length > 0 ? (
                   <ul className="space-y-4">
                     {data.matches.map((match, i) => (
                       <motion.li 
@@ -643,7 +601,7 @@ const handleUnblock = async (blockId: string) => {
                 )}
               </motion.div>
               {/* --- BLOCKED CONNECTIONS SLAB --- */}
-              {data.blocked_connections && data.blocked_connections.length > 0 && (
+              {data?.blocked_connections && data.blocked_connections.length > 0 && (
                 <motion.div 
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                   className="bg-[#050204] border border-[#2b101e]/50 rounded-2xl p-5 mt-6"
@@ -708,7 +666,7 @@ const handleUnblock = async (blockId: string) => {
                 <h2 className="text-2xl font-semibold text-white mb-2">Add More <span className="text-orange-500">Slots</span></h2>
                 <p className="text-orange-200/60 text-sm mb-8 font-medium tracking-wide">Add more slots to keep making additions.</p>
                 
-<div className="space-y-4">
+                <div className="space-y-4">
                   {/* STARTER PACKAGE */}
                   <button 
                     onClick={() => handleBuySlots('basic')}
