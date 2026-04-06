@@ -1,13 +1,13 @@
 // src/lib/api.ts
 
-const API_URL = 'api.zabiya.com';
+// 🚨 FIX: Added https:// to make it an absolute URL
+const API_URL = 'https://api.zabiya.com'; 
 const TOKEN_KEY = 'zabiya_token';
 
 /**
  * Standardized response handler.
  * Automatically catches 401s, clears invalid sessions, and safely parses errors.
  */
-
 async function handleResponse<T>(response: Response): Promise<T> {
   const data = await response.json().catch(() => ({}));
 
