@@ -87,27 +87,21 @@ export function HeroSection() {
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-6">
-        <motion.div
+ <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.3 }}
-          className="space-y-8 max-w-3xl"
+          className="space-y-6 max-w-2xl"
         >
-          {/* Main Tagline */}
-          <h1 className="text-5xl sm:text-6xl lg:text-8xl font-black text-white leading-tight tracking-tight drop-shadow-lg">
-            Don't wait <br />
-            <span className="text-white/80">for gravity.</span>
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black text-white leading-tight tracking-tight">
+            Zero Risk.
+            <br />
+            <span className="text-white/80">See if it's mutual.</span>
           </h1>
 
-          {/* Subtext */}
-          <div className="space-y-2">
-            <p className="text-xl sm:text-2xl text-white/90 font-medium">
-              Zero Risk. Pure Intent. 
-            </p>
-            <p className="text-md sm:text-lg text-white/60 max-w-xl mx-auto italic">
-              "There's a reason why gravity is the weakest force in the universe."
-            </p>
-          </div>
+          <p className="text-lg sm:text-xl text-white/60 max-w-lg mx-auto">
+            Find out if the feeling is mutual — without ruining the friendship.
+          </p>
 
           {/* CTA Button */}
           <motion.button

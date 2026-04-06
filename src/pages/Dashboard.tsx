@@ -16,6 +16,7 @@ interface DashboardData {
   active_intents?: Array<{ id: string; target: string; type: string; created_at: string }>; 
   expired_intents: Array<{ id: string; target_hash: string; expires_at: string }>;
   matches: Array<{ match_id: string; matched_at: string; contact: any }>;
+  blocked_connections: Array<{ block_id: string; blocked_at: string; contact: any }>;
 }
 
 // --- STARFIELD GENERATOR (static, no re-renders) ---
@@ -28,6 +29,8 @@ const generateStars = (count: number) => {
     animationDelay: `${Math.random() * 10}s`,
   }));
 };
+
+
 
 const stars = generateStars(30);
 
@@ -143,6 +146,40 @@ export default function Dashboard() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isInitializingPayment, setIsInitializingPayment] = useState(false);
 
+const handleRevokeIntent = async (id: string) => {
+  if (window.confirm("Removing this intent will permanently break the connection. (Consumed slots are not refunded). Continue?")) {
+    try {
+      await api.post(`/api/intent/${id}/revoke`);
+      toast({ title: 'Intent Revoked', description: 'Your intent has been permanently removed.' });
+      fetchDashboard();
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
+  }
+};
+
+const handleBlockMatch = async (matchId: string) => {
+  if (window.confirm("This will permanently remove this match. Are you sure? They won't be notified of the removal.")) {
+    try {
+      await api.post('/api/match/block', { matchId });
+      toast({ title: 'Match removed', description: 'User has been blocked.' });
+      fetchDashboard();
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
+  }
+};
+
+const handleUnblock = async (blockId: string) => {
+  try {
+    await api.post('/api/match/unblock', { blockId });
+    toast({ title: 'User Unblocked', description: 'They can now be matched again if you both submit intents.' });
+    fetchDashboard();
+  } catch (err: any) {
+    toast({ title: 'Error', description: err.message, variant: 'destructive' });
+  }
+};
+
   const fetchDashboard = async () => {
     try {
       const response = await api.get<{ success: boolean; data: DashboardData }>('/api/intent/dashboard');
@@ -185,8 +222,8 @@ export default function Dashboard() {
         }, 400); 
       } else {
         toast({ 
-          title: 'Locked in the Orbit', 
-          description: 'They’ll never know unless the gravity is mutual.',
+          title: 'Saved privately', 
+          description: 'They’ll only know if they feel the same.',
         });
         fetchDashboard(); 
       }
@@ -252,7 +289,7 @@ export default function Dashboard() {
               </h1>
               <div className="flex items-center gap-2 mt-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse shadow-[0_0_10px_rgba(99,102,241,1)]" />
-                <span className="text-indigo-300/60 text-xs tracking-[0.2em] font-bold uppercase">Encrypted Space</span>
+                <span className="text-indigo-300/60 text-xs tracking-[0.2em] font-bold uppercase">Private & Encrypted</span>
               </div>
             </div>
             <button
@@ -283,10 +320,10 @@ export default function Dashboard() {
                     <div className="p-2.5 bg-[#12121c] border border-[#2a2a3a] rounded-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
                       <Lock className="w-4 h-4 text-indigo-400" />
                     </div>
-                    <h3 className="text-xl font-semibold text-white tracking-wide">Lock Intent</h3>
+                    <h3 className="text-xl font-semibold text-white tracking-wide">Add Intent</h3>
                   </div>
                   <p className="text-sm text-indigo-200/40 mb-8 font-light tracking-wide pl-1">
-                    Release your intent into the orbit. Invisible until gravity pulls you together.
+                    Add someone you’re thinking about. They’ll only know if the feeling is mutual.
                   </p>
 
                   <form onSubmit={handleAddIntent} className="flex flex-col space-y-5">
@@ -317,7 +354,7 @@ export default function Dashboard() {
                       className="relative overflow-hidden group/btn w-full bg-[#11111a] border-2 border-[#2a2a3a] text-white font-semibold py-4 rounded-2xl hover:bg-indigo-600 hover:border-indigo-500 transition-all duration-300 disabled:opacity-50 disabled:grayscale cursor-pointer flex justify-center items-center gap-2 shadow-[0_10px_20px_rgba(0,0,0,0.3)]"
                     >
                       {isEncrypting ? (
-                        <span className="animate-pulse tracking-widest text-sm text-indigo-300">ENCRYPTING SIGNATURE...</span>
+                        <span className="animate-pulse tracking-widest text-sm text-indigo-300">Sending...</span>
                       ) : (
                         <>
                           <span className="tracking-wide">Send into Orbit</span>
@@ -351,7 +388,7 @@ export default function Dashboard() {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between mb-4 bg-[#081212] border border-[#122b2b] rounded-xl p-3 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]">
                       <p className="text-emerald-100/70 text-xs font-light">
-                        Awaiting mutual gravity...
+                        Waiting to see if it’s mutual...
                       </p>
                       <p className="text-emerald-400 text-xs font-mono font-bold tracking-widest uppercase">
                         {data.active_intents_count} ACTIVE
@@ -382,13 +419,13 @@ export default function Dashboard() {
                             </div>
                           </div>
                           
-                          <button 
-                            onClick={() => toast({ title: 'Revoke Intent', description: 'Intent revocation and slot refunds will be available in the next update.' })}
-                            className="p-2 rounded-lg bg-[#0a0a0a] border border-[#1a1a1a] text-red-500/40 hover:text-red-400 hover:border-red-900/50 hover:bg-[#1a0a0a] transition-all cursor-pointer opacity-0 group-hover/intent:opacity-100"
-                            title="Revoke Intent"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
+                            <button 
+                              onClick={() => handleRevokeIntent(intent.id)}
+                              className="p-2 rounded-lg bg-[#0a0a0a] border border-[#1a1a1a] text-red-500/40 hover:text-red-400 hover:border-red-900/50 hover:bg-[#1a0a0a] transition-all cursor-pointer opacity-0 group-hover/intent:opacity-100"
+                              title="Revoke Intent"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
                         </motion.li>
                       ))}
                     </ul>
@@ -401,7 +438,7 @@ export default function Dashboard() {
                     </div>
                     <div>
                       <p className="text-emerald-100/70 text-sm leading-relaxed font-light">
-                        Your intents are floating in the encrypted void. Awaiting mutual gravity...
+                        Your additions are saved privately. Waiting to see if there’s a match.
                       </p>
                       <p className="text-emerald-400 text-xs mt-2 font-mono font-bold tracking-widest uppercase">
                         {data.active_intents_count} ACTIVE
@@ -415,7 +452,7 @@ export default function Dashboard() {
                       <Zap className="w-5 h-5 text-emerald-900" />
                     </div>
                     <p className="text-emerald-900/50 text-sm font-semibold tracking-wide text-center uppercase">
-                      The space is empty. <br />Add a connection.
+                      Nothing here yet.<br />Add someone to get started.
                     </p>
                   </div>
                 )}
@@ -425,7 +462,7 @@ export default function Dashboard() {
                   <div className="mt-8 pt-6 border-t-2 border-[#0f1f1f] relative">
                     <div className="flex items-center gap-2 mb-4">
                       <Clock className="w-3 h-3 text-amber-500" />
-                      <h3 className="text-[10px] text-amber-500 uppercase tracking-[0.2em] font-bold">Decaying Orbits</h3>
+                      <h3 className="text-[10px] text-amber-500 uppercase tracking-[0.2em] font-bold">Expired Additions</h3>
                     </div>
                     <ul className="space-y-3">
                       {data.expired_intents.map((intent) => (
@@ -464,7 +501,7 @@ export default function Dashboard() {
                 <div className="relative">
                   <div className="flex items-center justify-between mb-6">
                     <span className="text-orange-500/80 text-[10px] font-bold uppercase tracking-[0.2em] flex items-center gap-2">
-                      <Zap className="w-3 h-3" /> Orbit Energy
+                      <Zap className="w-3 h-3" /> Available Slots
                     </span>
                     <div className="p-1.5 bg-[#1a0c04] border border-[#3d1c09] rounded-lg">
                       <CreditCard className="w-4 h-4 text-orange-700" />
@@ -488,7 +525,7 @@ export default function Dashboard() {
                   {data.wallet.intent_slots <= 1 && (
                     <p className="text-[10px] text-red-500 animate-pulse font-bold tracking-widest uppercase flex items-center gap-2 mt-4 bg-red-950/30 p-2 rounded-lg border border-red-900/50">
                       <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,1)]"></span>
-                      Energy critical. Reload.
+                      You’re running low. Add more slots.
                     </p>
                   )}
 
@@ -496,7 +533,7 @@ export default function Dashboard() {
                     onClick={() => setShowPaymentModal(true)}
                     className="w-full mt-6 bg-[#140a04] border-2 border-[#3d1c09] text-orange-200 font-bold tracking-wide py-3.5 rounded-2xl hover:bg-orange-600 hover:border-orange-500 hover:text-white transition-all cursor-pointer flex items-center justify-center gap-2 text-sm shadow-[0_8px_20px_rgba(0,0,0,0.4)]"
                   >
-                    <Sparkles className="w-4 h-4" /> Refuel Core
+                    <Sparkles className="w-4 h-4" /> Get More Slots
                   </button>
                 </div>
               </motion.div>
@@ -540,7 +577,7 @@ export default function Dashboard() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-bold text-pink-400/80 uppercase tracking-widest flex items-center justify-between">
-                              Connection
+                              Match
                               <span className="text-[9px] text-[#4a1e34]">
                                 {new Date(match.matched_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                               </span>
@@ -549,9 +586,12 @@ export default function Dashboard() {
                               {match.contact.phone || match.contact.telegram_chat_id || match.contact.instagram_username}
                             </p>
                             <div className="flex gap-3 mt-4 pt-3 border-t-2 border-[#241019] opacity-0 group-hover/match:opacity-100 transition-opacity">
-                              <button onClick={() => handleAction('Block')} className="text-[9px] font-bold uppercase tracking-[0.2em] bg-[#14080c] border border-[#2b101a] px-3 py-1.5 rounded-lg text-white/30 hover:text-red-500 hover:border-red-900/50 transition-colors cursor-pointer">
-                                Block
-                              </button>
+                            <button 
+                              onClick={() => handleBlockMatch(match.match_id)} 
+                              className="text-[9px] font-bold uppercase tracking-[0.2em] bg-[#14080c] border border-[#2b101a] px-3 py-1.5 rounded-lg text-white/30 hover:text-red-500 hover:border-red-900/50 transition-colors cursor-pointer"
+                            >
+                              Block
+                            </button>
                               <button onClick={() => handleAction('Report')} className="text-[9px] font-bold uppercase tracking-[0.2em] bg-[#14080c] border border-[#2b101a] px-3 py-1.5 rounded-lg text-white/30 hover:text-red-500 hover:border-red-900/50 transition-colors cursor-pointer">
                                 Report
                               </button>
@@ -571,11 +611,37 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <p className="text-[10px] text-pink-700 font-bold uppercase tracking-[0.2em] max-w-[150px]">
-                      Awaiting Mutual Alignment
+                      No Matches Yet
                     </p>
                   </div>
                 )}
               </motion.div>
+              {/* --- BLOCKED CONNECTIONS SLAB --- */}
+              {data.blocked_connections && data.blocked_connections.length > 0 && (
+                <motion.div 
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                  className="bg-[#050204] border border-[#2b101e]/50 rounded-2xl p-5 mt-6"
+                >
+                  <h3 className="text-[10px] text-white/40 uppercase tracking-[0.2em] font-bold mb-4 flex items-center gap-2">
+                    <X className="w-3 h-3" /> Blocked Users
+                  </h3>
+                  <ul className="space-y-2">
+                    {data.blocked_connections.map((block) => (
+                      <li key={block.block_id} className="flex justify-between items-center bg-black/40 p-3 rounded-xl border border-white/5">
+                        <span className="text-xs text-white/30 font-mono">
+                          {block.contact.phone || block.contact.telegram_chat_id || 'Unknown'}
+                        </span>
+                        <button 
+                          onClick={() => handleUnblock(block.block_id)}
+                          className="text-[9px] bg-white/5 hover:bg-white/10 text-white/50 hover:text-white px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                        >
+                          Unblock
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </motion.div>
+              )}
             </div>
           </div>
         </div>
@@ -613,8 +679,8 @@ export default function Dashboard() {
                   <Zap className="w-6 h-6 text-orange-500" />
                 </div>
 
-                <h2 className="text-2xl font-semibold text-white mb-2">Refuel <span className="text-orange-500">Core</span></h2>
-                <p className="text-orange-900/60 text-sm mb-8 font-medium tracking-wide">Add more orbit slots to keep your intents alive in the void.</p>
+                <h2 className="text-2xl font-semibold text-white mb-2">Add More <span className="text-orange-500">Slots</span></h2>
+                <p className="text-orange-200/60 text-sm mb-8 font-medium tracking-wide">Add more slots to keep making additions.</p>
                 
                 <div className="space-y-4">
                   <button 
@@ -624,9 +690,9 @@ export default function Dashboard() {
                   >
                     <div>
                       <p className="text-white/70 font-semibold group-hover:text-white transition">3 Slots</p>
-                      <p className="text-[10px] text-orange-900/50 uppercase tracking-widest font-bold mt-1">Minor alignment</p>
+                      <p className="text-[10px] text-orange-400/70 uppercase tracking-widest font-bold mt-1">Basic</p>
                     </div>
-                    <p className="text-orange-500 font-mono bg-[#140a04] border border-[#3d1c09] px-3 py-1.5 rounded-xl text-xs font-bold">50 ETB</p>
+                    <p className="text-orange-500 font-mono bg-[#140a04] border border-[#3d1c09] px-3 py-1.5 rounded-xl text-xs font-bold">149 ETB</p>
                   </button>
                   
                   <button 
@@ -635,10 +701,10 @@ export default function Dashboard() {
                     className="w-full bg-[#11111a] border-2 border-[#2a2a3a] text-white p-5 rounded-2xl hover:bg-indigo-600 hover:border-indigo-500 transition-all flex justify-between items-center text-left cursor-pointer shadow-[0_10px_20px_rgba(0,0,0,0.3)]"
                   >
                     <div>
-                      <p className="font-semibold text-indigo-100">10 Slots</p>
-                      <p className="text-[10px] text-indigo-300/50 uppercase tracking-widest font-bold mt-1">Deep space exp.</p>
+                      <p className="font-semibold text-indigo-100">5 Slots</p>
+                      <p className="text-[10px] text-indigo-300 uppercase tracking-widest font-bold mt-1">Best Value</p>
                     </div>
-                    <p className="font-mono bg-[#0a0a0f] border border-[#1c1c28] text-indigo-300 px-3 py-1.5 rounded-xl text-xs font-bold shadow-inner">120 ETB</p>
+                    <p className="font-mono bg-[#0a0a0f] border border-[#1c1c28] text-indigo-300 px-3 py-1.5 rounded-xl text-xs font-bold shadow-inner">199 ETB</p>
                   </button>
                 </div>
               </motion.div>
