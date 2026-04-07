@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, ShieldCheck, LogOut, Sparkles, CreditCard, X, Globe, Clock, User, Zap, Heart, RefreshCw, Smartphone, Send, Camera, Trash2 } from 'lucide-react';
+import { Loader2, Lock, ShieldCheck, LogOut, Sparkles, CreditCard, X, Globe, Clock, User, Zap, Heart, RefreshCw, Smartphone, Send, Camera, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useApp } from '@/context/AppContext';
 import { useNavigate } from 'react-router-dom';
@@ -103,33 +103,37 @@ export default function Dashboard() {
   const [showMatchModal, setShowMatchModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isInitializingPayment, setIsInitializingPayment] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState<'basic' | 'premium' | null>(null); // 👈 NEW STATE
 
-  // 🚨 NEW: Payment Redirect Handler
+// 🚨 NEW: Payment Redirect Handler
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const paymentStatus = searchParams.get('payment');
 
     if (paymentStatus) {
-      if (paymentStatus === 'success') {
-        toast({ 
-          title: 'Transaction Complete 🚀', 
-          description: 'Your slots have been added. Welcome back to Orbit.',
-        });
-      } else if (paymentStatus === 'cancelled') {
-        toast({ 
-          title: 'Payment Cancelled', 
-          description: 'You cancelled the transaction. No slots were added.',
-          variant: 'destructive'
-        });
-      } else if (paymentStatus === 'error') {
-        toast({ 
-          title: 'Gateway Error', 
-          description: 'Payment timed out or failed. Please try again.',
-          variant: 'destructive'
-        });
-      }
+      // Add a tiny 300ms delay to let the <Toaster /> mount before firing
+      setTimeout(() => {
+        if (paymentStatus === 'success') {
+          toast({ 
+            title: 'Transaction Complete 🚀', 
+            description: 'Your slots have been added. Welcome back to Orbit.',
+          });
+        } else if (paymentStatus === 'cancelled') {
+          toast({ 
+            title: 'Payment Cancelled', 
+            description: 'You cancelled the transaction. No slots were added.',
+            variant: 'destructive'
+          });
+        } else if (paymentStatus === 'error') {
+          toast({ 
+            title: 'Gateway Error', 
+            description: 'Payment timed out or failed. Please try again.',
+            variant: 'destructive'
+          });
+        }
+      }, 300);
 
-      // Clean the URL so the toast doesn't pop up again if they refresh
+      // Clean the URL instantly so it doesn't pop up again on manual refresh
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []); // Run once on component mount
@@ -664,14 +668,14 @@ export default function Dashboard() {
         <AnimatePresence>
           {showMatchModal && <MatchModal onClose={() => setShowMatchModal(false)} />}
           
-          {showPaymentModal && (
+{showPaymentModal && (
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-50 flex items-center justify-center px-4"
             >
-              <div className="absolute inset-0 bg-[#030305]/95 backdrop-blur-sm" onClick={() => setShowPaymentModal(false)} />
+              <div className="absolute inset-0 bg-[#030305]/95 backdrop-blur-sm" onClick={() => !isInitializingPayment && setShowPaymentModal(false)} />
               
               <motion.div 
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -684,7 +688,8 @@ export default function Dashboard() {
                 
                 <button
                   onClick={() => setShowPaymentModal(false)}
-                  className="absolute top-6 right-6 text-white/30 hover:text-white transition-colors cursor-pointer bg-[#140a04] border border-[#3d1c09] rounded-xl p-2"
+                  disabled={isInitializingPayment}
+                  className="absolute top-6 right-6 text-white/30 hover:text-white transition-colors cursor-pointer bg-[#140a04] border border-[#3d1c09] rounded-xl p-2 disabled:opacity-50"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -694,38 +699,74 @@ export default function Dashboard() {
                 </div>
 
                 <h2 className="text-2xl font-semibold text-white mb-2">Add More <span className="text-orange-500">Slots</span></h2>
-                <p className="text-orange-200/60 text-sm mb-8 font-medium tracking-wide">Add more slots to keep making additions.</p>
+                <p className="text-orange-200/60 text-sm mb-8 font-medium tracking-wide">Select a package to continue.</p>
                 
                 <div className="space-y-4">
-                  {/* STARTER PACKAGE */}
+                  {/* STARTER PACKAGE (SELECTABLE) */}
                   <button 
-                    onClick={() => handleBuySlots('basic')}
+                    onClick={() => setSelectedPackage('basic')}
                     disabled={isInitializingPayment}
-                    className="w-full bg-[#050301] border-2 border-[#1a0c04] p-5 rounded-2xl hover:border-orange-900/50 hover:bg-[#0a0602] transition-all flex justify-between items-center text-left cursor-pointer group"
+                    className={`w-full p-5 rounded-2xl transition-all flex justify-between items-center text-left cursor-pointer group border-2 ${
+                      selectedPackage === 'basic' 
+                        ? 'border-orange-500 bg-[#1a0c04] shadow-[0_0_15px_rgba(249,115,22,0.2)]' 
+                        : 'border-[#1a0c04] bg-[#050301] hover:border-orange-900/50'
+                    }`}
                   >
                     <div>
-                      <p className="text-white/70 font-semibold group-hover:text-white transition">Starter</p>
-                      <p className="text-[10px] text-orange-900/50 uppercase tracking-widest font-bold mt-1">3 Slots</p>
+                      <p className="text-white/90 font-semibold transition">Starter</p>
+                      <p className="text-[10px] text-orange-600 uppercase tracking-widest font-bold mt-1">3 Slots</p>
                     </div>
-                    <p className="text-orange-500 font-mono bg-[#140a04] border border-[#3d1c09] px-3 py-1.5 rounded-xl text-xs font-bold">149 ETB</p>
+                    <p className={`font-mono px-3 py-1.5 rounded-xl text-xs font-bold ${
+                      selectedPackage === 'basic' ? 'bg-orange-500 text-black' : 'bg-[#140a04] border border-[#3d1c09] text-orange-500'
+                    }`}>
+                      149 ETB
+                    </p>
                   </button>
                   
-                  {/* BEST VALUE PACKAGE */}
+                  {/* PREMIUM PACKAGE (SELECTABLE) */}
                   <button 
-                    onClick={() => handleBuySlots('premium')}
+                    onClick={() => setSelectedPackage('premium')}
                     disabled={isInitializingPayment}
-                    className="relative w-full bg-[#11111a] border-2 border-[#2a2a3a] text-white p-5 rounded-2xl hover:bg-indigo-600 hover:border-indigo-500 transition-all flex justify-between items-center text-left cursor-pointer shadow-[0_10px_20px_rgba(0,0,0,0.3)]"
+                    className={`relative w-full p-5 rounded-2xl transition-all flex justify-between items-center text-left cursor-pointer border-2 ${
+                      selectedPackage === 'premium'
+                        ? 'border-indigo-400 bg-indigo-900/20 shadow-[0_0_20px_rgba(99,102,241,0.2)]'
+                        : 'border-[#2a2a3a] bg-[#11111a] hover:border-indigo-500/50'
+                    }`}
                   >
-                    {/* Value Badge */}
                     <div className="absolute -top-3 -right-2 bg-gradient-to-r from-orange-500 to-amber-500 text-black text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg">
                       Best Value
                     </div>
 
                     <div>
                       <p className="font-semibold text-indigo-100">Deep Space Pack</p>
-                      <p className="text-[10px] text-indigo-300/80 uppercase tracking-widest font-bold mt-1">6 Slots (Double Output)</p>
+                      <p className="text-[10px] text-indigo-400 uppercase tracking-widest font-bold mt-1">6 Slots (Double)</p>
                     </div>
-                    <p className="font-mono bg-[#0a0a0f] border border-[#1c1c28] text-indigo-300 px-3 py-1.5 rounded-xl text-xs font-bold shadow-inner">199 ETB</p>
+                    <p className={`font-mono px-3 py-1.5 rounded-xl text-xs font-bold ${
+                      selectedPackage === 'premium' ? 'bg-indigo-500 text-white' : 'bg-[#0a0a0f] border border-[#1c1c28] text-indigo-300'
+                    }`}>
+                      199 ETB
+                    </p>
+                  </button>
+                </div>
+
+                {/* 🚨 THE NEW PROCEED BUTTON */}
+                <div className="mt-8 pt-6 border-t-2 border-[#3d1c09]">
+                  <button
+                    onClick={() => selectedPackage && handleBuySlots(selectedPackage)}
+                    disabled={!selectedPackage || isInitializingPayment}
+                    className="w-full bg-gradient-to-r from-orange-600 to-orange-500 text-white font-bold tracking-wide py-4 rounded-2xl hover:from-orange-500 hover:to-amber-500 transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed flex justify-center items-center gap-3 shadow-[0_4px_15px_rgba(249,115,22,0.3)]"
+                  >
+                    {isInitializingPayment ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Connecting Gateway...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Proceed to Pay</span>
+                        <Sparkles className="w-4 h-4" />
+                      </>
+                    )}
                   </button>
                 </div>
               </motion.div>
