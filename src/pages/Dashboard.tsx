@@ -8,6 +8,7 @@ import { toast } from '@/hooks/use-toast';
 import { MatchModal } from '@/components/hasab/MatchModal';
 
 // --- TYPES ---
+// 1. Update the interface at the top
 interface DashboardData {
   wallet: { slots: number };
   aliases: Array<{ id: string; type: string; verified: boolean; created_at: string }>;
@@ -16,7 +17,10 @@ interface DashboardData {
   expired_intents: Array<{ id: string; target_hash: string; expires_at: string }>;
   matches: Array<{ match_id: string; matched_at: string; contact: any }>;
   blocked_connections: Array<{ block_id: string; blocked_at: string; contact: any }>;
+  inactive_telegram_handle?: string | null; // 👈 ADD THIS
 }
+
+ 
 
 // --- STARFIELD GENERATOR ---
 const generateStars = (count: number) => {
@@ -104,6 +108,7 @@ export default function Dashboard() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isInitializingPayment, setIsInitializingPayment] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<'basic' | 'premium' | null>(null); // 👈 NEW STATE
+   const [showAliasModal, setShowAliasModal] = useState(false); 
 
 // 🚨 NEW: Payment Redirect Handler
   useEffect(() => {
@@ -492,10 +497,10 @@ export default function Dashboard() {
                 </p>
                 
                 <button 
-                  onClick={() => alert("Wire this to your addAlias modal/flow!")}
+                  onClick={() => setShowAliasModal(true)} // 👈 FIXED
                   className="w-full bg-[#1a0c04] border border-[#3d1c09] text-orange-400 font-bold py-3.5 rounded-xl hover:bg-orange-600 hover:text-white transition-all duration-300 cursor-pointer flex justify-center items-center gap-2 text-sm shadow-[0_4px_15px_rgba(0,0,0,0.5)]"
                 >
-                  <ShieldCheck className="w-4 h-4" /> Add Your Another Contacts (2 Slots)
+                  <ShieldCheck className="w-4 h-4" /> Add Another Contact (2 Slots)
                 </button>
               </motion.div>
 
@@ -769,6 +774,98 @@ export default function Dashboard() {
                     )}
                   </button>
                 </div>
+              </motion.div>
+            </motion.div>
+          )}
+          {/* --- ALIAS ADDITION MODAL --- */}
+          {showAliasModal && (
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center px-4"
+            >
+              <div className="absolute inset-0 bg-[#030305]/95 backdrop-blur-sm" onClick={() => setShowAliasModal(false)} />
+              
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="relative bg-[#0a0602] border-2 border-[#3d1c09] rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-orange-600/10 rounded-full blur-[40px] pointer-events-none" />
+                
+                <button onClick={() => setShowAliasModal(false)} className="absolute top-6 right-6 text-white/30 hover:text-white transition-colors cursor-pointer bg-[#140a04] border border-[#3d1c09] rounded-xl p-2">
+                  <X className="w-4 h-4" />
+                </button>
+
+                <div className="mb-6">
+                  <h2 className="text-2xl font-semibold text-white mb-2 flex items-center gap-2">
+                    <ShieldCheck className="w-6 h-6 text-orange-500" /> Identity Vault
+                  </h2>
+                  <p className="text-orange-200/60 text-sm font-medium">Add aliases to ensure you don't miss a match. Cost: 2 Slots.</p>
+                </div>
+
+                {/* SLOT CHECKER */}
+                {(data?.wallet?.slots || 0) < 2 ? (
+                  <div className="bg-red-950/30 border border-red-900/50 rounded-2xl p-5 text-center">
+                    <Zap className="w-8 h-8 text-red-500 mx-auto mb-3" />
+                    <p className="text-red-200 text-sm font-medium mb-4">You need 2 slots to add a verified alias. You currently have {data?.wallet?.slots || 0}.</p>
+                    <button 
+                      onClick={() => { setShowAliasModal(false); setShowPaymentModal(true); }}
+                      className="w-full bg-red-900/40 text-red-100 py-3 rounded-xl hover:bg-red-600 transition-colors text-sm font-bold"
+                    >
+                      Buy More Slots
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    
+                    {/* UPSELL: KNOWN TELEGRAM HANDLE */}
+                    {data?.inactive_telegram_handle && (
+                      <div className="bg-gradient-to-r from-[#11111a] to-[#1a1a2e] border-2 border-indigo-500/30 rounded-2xl p-4 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-2">
+                          <Sparkles className="w-4 h-4 text-indigo-400" />
+                        </div>
+                        <p className="text-xs text-indigo-300 font-bold uppercase tracking-wider mb-1">Quick Activate</p>
+                        <p className="text-sm text-indigo-100/80 mb-3 leading-snug">
+                          Want people to find you by your Telegram handle <span className="font-bold text-white">{data.inactive_telegram_handle}</span>?
+                        </p>
+                        <button 
+                          onClick={() => alert("Backend call: Activate known TG handle & deduct 2 slots")}
+                          className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl font-bold text-sm transition-colors shadow-lg shadow-indigo-900/20"
+                        >
+                          Activate Now (-2 Slots)
+                        </button>
+                      </div>
+                    )}
+
+                    {/* ADD NEW ALIAS FORM */}
+                    <div className="space-y-4">
+                      <div className="text-xs text-white/40 font-bold uppercase tracking-[0.2em] flex items-center gap-2 mb-2">
+                        <span className="w-full h-[1px] bg-white/10" /> OR ADD NEW <span className="w-full h-[1px] bg-white/10" />
+                      </div>
+
+                      <select 
+                        id="newAliasType"
+                        className="w-full bg-[#050301] border-2 border-[#1a0c04] rounded-xl px-4 py-3.5 text-orange-100 focus:border-orange-500/50 focus:outline-none transition-colors text-sm"
+                      >
+                        <option value="phone">📱 Additional Phone Number</option>
+                        <option value="telegram">✈️ Different Telegram Handle</option>
+                        <option value="instagram">📸 Instagram Username</option>
+                      </select>
+
+                      <input 
+                        type="text" 
+                        placeholder="Enter identifier..."
+                        className="w-full bg-[#050301] border-2 border-[#1a0c04] rounded-xl px-4 py-3.5 text-white placeholder:text-white/20 focus:border-orange-500/50 focus:outline-none transition-colors text-sm"
+                      />
+
+                      <button 
+                        onClick={() => alert("Backend call: Request OTP / Create Alias")}
+                        className="w-full bg-[#1a0c04] border border-[#3d1c09] text-orange-400 font-bold py-3.5 rounded-xl hover:bg-orange-600 hover:text-white transition-all text-sm"
+                      >
+                        Verify & Add (-2 Slots)
+                      </button>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             </motion.div>
           )}
