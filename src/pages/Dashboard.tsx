@@ -104,6 +104,36 @@ export default function Dashboard() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isInitializingPayment, setIsInitializingPayment] = useState(false);
 
+  // 🚨 NEW: Payment Redirect Handler
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const paymentStatus = searchParams.get('payment');
+
+    if (paymentStatus) {
+      if (paymentStatus === 'success') {
+        toast({ 
+          title: 'Transaction Complete 🚀', 
+          description: 'Your slots have been added. Welcome back to Orbit.',
+        });
+      } else if (paymentStatus === 'cancelled') {
+        toast({ 
+          title: 'Payment Cancelled', 
+          description: 'You cancelled the transaction. No slots were added.',
+          variant: 'destructive'
+        });
+      } else if (paymentStatus === 'error') {
+        toast({ 
+          title: 'Gateway Error', 
+          description: 'Payment timed out or failed. Please try again.',
+          variant: 'destructive'
+        });
+      }
+
+      // Clean the URL so the toast doesn't pop up again if they refresh
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []); // Run once on component mount
+
   const handleRevokeIntent = async (id: string) => {
     if (window.confirm("Removing this intent will permanently break the connection. (Consumed slots are not refunded). Continue?")) {
       try {
@@ -388,7 +418,7 @@ export default function Dashboard() {
                       ))}
                     </ul>
                   </div>
-                ) : data?.active_intents_count > 0 ? (
+                ) : data?.active_intents_count !== undefined && data.active_intents_count > 0 ? (
                   <div className="bg-[#081212] border-2 border-[#122b2b] rounded-2xl p-5 flex items-start gap-4 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]">
                     <div className="p-2 bg-[#102424] rounded-full border border-[#1a3a3a]">
                       <Globe className="w-4 h-4 text-emerald-400" />
