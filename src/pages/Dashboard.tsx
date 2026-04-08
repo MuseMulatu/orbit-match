@@ -909,9 +909,10 @@ export default function Dashboard() {
                   setAliasLoading(true);
                   setAliasError('');
                   try {
-                    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/alias/activate-telegram`, {
+                    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/alias/quick-activate`, {
                       method: 'POST',
-                      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` }
+                      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('zabiya_token')}` },
+                      body: JSON.stringify({ telegramUsername: data.inactive_telegram_handle })
                     });
                     const result = await res.json();
                     if(result.success) {
@@ -970,15 +971,19 @@ export default function Dashboard() {
                   setAliasLoading(true);
                   setAliasError('');
                   try {
-                    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/alias/add`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
-                      body: JSON.stringify({ type: aliasType.toUpperCase(), value: aliasValue })
-                    });
-                    const result = await res.json();
-                    if(result.success) {
-                      setIsOtpStep(true); // Move to OTP step
-                    } else {
+const res = await fetch(`${import.meta.env.VITE_API_URL}/api/alias/request-otp`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('zabiya_token')}` },
+  body: JSON.stringify({ type: aliasType, identifier: aliasValue }) // 👈 Backend expects 'identifier' and lowercase type
+});
+const result = await res.json();
+if(result.success) {
+  setIsOtpStep(true); 
+  // 🚨 Automatically open the Telegram bot in a new tab so they can grab the OTP!
+  if (result.botUrl && aliasType !== 'instagram') {
+    window.open(result.botUrl, '_blank');
+  }
+} else {
                       setAliasError(result.message);
                     }
                   } catch (err) {
@@ -1013,11 +1018,11 @@ export default function Dashboard() {
                   setAliasLoading(true);
                   setAliasError('');
                   try {
-                    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/alias/verify`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
-                      body: JSON.stringify({ type: aliasType.toUpperCase(), value: aliasValue, code: otpCode })
-                    });
+const res = await fetch(`${import.meta.env.VITE_API_URL}/api/alias/verify`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('zabiya_token')}` },
+  body: JSON.stringify({ type: aliasType, identifier: aliasValue, otp: otpCode }) // 👈 Match backend schema
+});
                     const result = await res.json();
                     if(result.success) {
                       setShowAliasModal(false);
