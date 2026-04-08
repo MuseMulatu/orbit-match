@@ -8,13 +8,12 @@ import { toast } from '@/hooks/use-toast';
 import { MatchModal } from '@/components/hasab/MatchModal';
 
 // --- TYPES ---
-// 1. Update the interface at the top
 interface DashboardData {
-  wallet: { slots: number };  // The Vault
+  wallet: { slots: number };  
   aliases: Array<{
     id: string;
-    alias_type: 'TELEGRAM' | 'INSTAGRAM' | 'PHONE'; // Strict union typing!
-    alias_value: string; // 👈 Fixed from ReactNode
+    alias_type: 'TELEGRAM' | 'INSTAGRAM' | 'PHONE'; 
+    alias_value: string; 
     verified: boolean;
     created_at: string;
   }>;
@@ -23,10 +22,8 @@ interface DashboardData {
   expired_intents: Array<{ id: string; target_hash: string; expires_at: string }>;
   matches: Array<{ match_id: string; matched_at: string; contact: any }>;
   blocked_connections: Array<{ block_id: string; blocked_at: string; contact: any }>;
-  inactive_telegram_handle?: string | null; // 👈 ADD THIS
+  inactive_telegram_handle?: string | null;
 }
-
- 
 
 // --- STARFIELD GENERATOR ---
 const generateStars = (count: number) => {
