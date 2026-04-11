@@ -54,7 +54,11 @@ export function HeroSection() {
         muted={isMuted}
         loop
         playsInline
+        preload="auto" 
+        poster="/images/hero-poster.jpg" 
       >
+        {/* Put WebM first! Browsers that support it will grab the smaller file */}
+        <source src="/videos/bg-video.webm" type="video/webm" />
         <source src="/videos/bg-video.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
