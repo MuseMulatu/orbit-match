@@ -121,6 +121,9 @@ export default function Dashboard() {
   const [aliasLoading, setAliasLoading] = useState(false);
   const [aliasError, setAliasError] = useState('');
 
+  const [showTelebirrModal, setShowTelebirrModal] = useState(false);
+  const [telebirrTxId, setTelebirrTxId] = useState('');
+
 // 🚨 NEW: Payment Redirect Handler
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -769,7 +772,13 @@ export default function Dashboard() {
                 {/* 🚨 THE NEW PROCEED BUTTON */}
                 <div className="mt-8 pt-6 border-t-2 border-[#3d1c09]">
                   <button
-                    onClick={() => selectedPackage && handleBuySlots(selectedPackage)}
+                    onClick={() => {
+                    // 🚨 TEMPORARY SWAP: Open Telebirr manual transfer instead of ArifPay
+                          setShowPaymentModal(false);
+                          setShowTelebirrModal(true);
+                  // TO REVERT TO ARIFPAY: Delete the 2 lines above and uncomment the line below:
+                          // selectedPackage && handleBuySlots(selectedPackage);
+                        }}
                     disabled={!selectedPackage || isInitializingPayment}
                     className="w-full bg-gradient-to-r from-orange-600 to-orange-500 text-white font-bold tracking-wide py-4 rounded-2xl hover:from-orange-500 hover:to-amber-500 transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed flex justify-center items-center gap-3 shadow-[0_4px_15px_rgba(249,115,22,0.3)]"
                   >
@@ -786,6 +795,78 @@ export default function Dashboard() {
                     )}
                   </button>
                 </div>
+              </motion.div>
+            </motion.div>
+          )}
+          {/* --- 🚨 TEMPORARY TELEBIRR MANUAL MODAL --- */}
+          {showTelebirrModal && (
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center px-4"
+            >
+              <div className="absolute inset-0 bg-[#030305]/95 backdrop-blur-sm" onClick={() => !isInitializingPayment && setShowTelebirrModal(false)} />
+              
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="relative bg-[#0a0602] border-2 border-green-500/50 rounded-[2.5rem] p-8 max-w-sm w-full shadow-[0_0_50px_rgba(34,197,94,0.15)]"
+              >
+                <button onClick={() => setShowTelebirrModal(false)} className="absolute top-6 right-6 text-white/30 hover:text-white bg-[#140a04] border border-[#3d1c09] rounded-xl p-2">
+                  <X className="w-4 h-4" />
+                </button>
+
+                <h2 className="text-2xl font-bold text-white mb-2">Telebirr Transfer</h2>
+                <p className="text-green-400 text-sm font-medium mb-6">Automated gateway offline. Manual deposit active.</p>
+                
+                <div className="bg-[#140a04] border border-[#3d1c09] rounded-2xl p-5 mb-6 text-center space-y-3">
+                  <p className="text-white/60 text-sm">Send exactly:</p>
+                  <p className="text-3xl font-black text-white">{selectedPackage === 'premium' ? '199' : '149'} ETB</p>
+                  <p className="text-white/60 text-sm">to</p>
+                  <div className="bg-green-500/10 border border-green-500/20 py-2 rounded-lg">
+                    <p className="text-lg font-bold text-green-400 tracking-wider">0934963090</p>
+                    <p className="text-xs text-green-500/70 uppercase font-bold mt-1">Muse Mulatu</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2 mb-6">
+                  <label className="text-xs font-bold text-white/40 uppercase tracking-wider">Transaction ID (e.g. DD84PF...)</label>
+                  <input 
+                    type="text" 
+                    value={telebirrTxId}
+                    onChange={(e) => setTelebirrTxId(e.target.value.toUpperCase())}
+                    placeholder="Enter ID here..."
+                    className="w-full bg-[#050301] border-2 border-[#1a0c04] rounded-xl px-4 py-3.5 text-white font-mono tracking-widest focus:border-green-500/50 focus:outline-none transition-colors"
+                  />
+                </div>
+
+                <button 
+                  disabled={isInitializingPayment || telebirrTxId.length < 5}
+                  onClick={async () => {
+                    setIsInitializingPayment(true);
+                    try {
+                      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/payment/telebirr-verify`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('zabiya_token')}` },
+                        body: JSON.stringify({ transactionId: telebirrTxId, packageType: selectedPackage })
+                      });
+                      const result = await res.json();
+                      if (result.success) {
+                        toast({ title: 'Payment Confirmed 🚀', description: 'Slots added successfully!' });
+                        setShowTelebirrModal(false);
+                        setTelebirrTxId('');
+                        fetchDashboard(); // Refresh slots UI
+                      } else {
+                        toast({ title: 'Verification Failed', description: result.error, variant: 'destructive' });
+                      }
+                    } catch (err) {
+                      toast({ title: 'Error', description: 'Failed to contact server.', variant: 'destructive' });
+                    } finally {
+                      setIsInitializingPayment(false);
+                    }
+                  }}
+                  className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-xl transition-all disabled:opacity-50 flex justify-center items-center gap-2"
+                >
+                  {isInitializingPayment ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify & Claim Slots"}
+                </button>
               </motion.div>
             </motion.div>
           )}
