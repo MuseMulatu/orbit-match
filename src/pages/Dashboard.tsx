@@ -10,10 +10,10 @@ import { MatchModal } from '@/components/hasab/MatchModal';
 // --- TYPES ---
 interface DashboardData {
   wallet: { slots: number };  
-  aliases: Array<{
+aliases: Array<{
     id: string;
-    alias_type: 'TELEGRAM' | 'INSTAGRAM' | 'PHONE'; 
-    alias_value: string; 
+    type: string; // 👈 Changed to match backend
+    value: string; // 👈 Changed to match backend
     verified: boolean;
     created_at: string;
   }>;
@@ -650,63 +650,7 @@ export default function Dashboard() {
                   </div>
                 )}
               </motion.div>
-              {/* --- IDENTITY VAULT SECTION (Active Aliases) --- */}
-<div className="bg-[#0a0602] border-2 border-[#1a0c04] rounded-3xl p-6 mt-8">
-  <div className="flex justify-between items-center mb-6">
-    <div>
-      <h3 className="text-xl font-bold text-white flex items-center gap-2">
-        <ShieldCheck className="w-5 h-5 text-orange-500" /> Identity Vault
-      </h3>
-      <p className="text-white/40 text-sm mt-1">Identities linked to your Orbit</p>
-    </div>
-    <button 
-      onClick={() => setShowAliasModal(true)}
-      className="bg-[#1a0c04] border border-[#3d1c09] text-orange-400 px-4 py-2 rounded-xl text-sm font-bold hover:bg-orange-600 hover:text-white transition-all flex items-center gap-2"
-    >
-      <Plus className="w-4 h-4" /> Add Alias
-    </button>
-  </div>
 
-  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-    {/* Always show the primary phone number */}
-    <div className="bg-[#140a04] border border-[#3d1c09]/50 rounded-xl p-4 flex items-center gap-4">
-      <div className="bg-orange-500/10 p-2 rounded-lg">
-        <Phone className="w-5 h-5 text-orange-500" />
-      </div>
-      <div>
-        <p className="text-white/40 text-xs font-bold uppercase tracking-wider">Primary Phone</p>
-        <p className="text-white font-medium">{data?.phone || "Hidden"}</p>
-      </div>
-      <div className="ml-auto">
-        <span className="bg-green-500/10 text-green-400 text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider">Verified</span>
-      </div>
-    </div>
-
-    {/* Map through additional aliases */}
-    {data?.aliases?.length > 0 ? (
-      data.aliases.map((alias, index) => (
-        <div key={index} className="bg-[#140a04] border border-[#3d1c09]/50 rounded-xl p-4 flex items-center gap-4">
-          <div className="bg-orange-500/10 p-2 rounded-lg">
-            {alias.alias_type === 'TELEGRAM' ? <Send className="w-5 h-5 text-blue-400" /> : 
-             alias.alias_type === 'INSTAGRAM' ? <Camera className="w-5 h-5 text-pink-400" /> : 
-             <Phone className="w-5 h-5 text-orange-500" />}
-          </div>
-          <div>
-            <p className="text-white/40 text-xs font-bold uppercase tracking-wider">{alias.alias_type}</p>
-            <p className="text-white font-medium">{alias.alias_value}</p>
-          </div>
-          <div className="ml-auto">
-            <span className="bg-green-500/10 text-green-400 text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider">Verified</span>
-          </div>
-        </div>
-      ))
-    ) : (
-      <div className="bg-[#140a04] border border-dashed border-[#3d1c09] rounded-xl p-4 flex items-center justify-center text-white/30 text-sm font-medium h-full">
-        No extra aliases linked yet.
-      </div>
-    )}
-  </div>
-</div>
               {/* --- BLOCKED CONNECTIONS SLAB --- */}
               {data?.blocked_connections && data.blocked_connections.length > 0 && (
                 <motion.div 
@@ -846,7 +790,6 @@ export default function Dashboard() {
             </motion.div>
           )}
           {/* --- ALIAS ADDITION MODAL --- */}
-          {/* --- ALIAS ADDITION MODAL --- */}
 {showAliasModal && (
   <motion.div 
     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -873,9 +816,9 @@ export default function Dashboard() {
 
       <div className="mb-6">
         <h2 className="text-2xl font-semibold text-white mb-2 flex items-center gap-2">
-          <ShieldCheck className="w-6 h-6 text-orange-500" /> Identity Vault
+          <ShieldCheck className="w-6 h-6 text-orange-500" /> Your Identities
         </h2>
-        <p className="text-orange-200/60 text-sm font-medium">Add aliases to ensure you don't miss a match. Cost: 2 Slots.</p>
+        <p className="text-orange-200/60 text-sm font-medium">Add aliases (identities like your Telegram/Insta username or your other phone number) to ensure you don't miss a match. Even if your crush only knows one of your identities, they can still find and add you! </p>
       </div>
 
       {/* SLOT CHECKER */}
@@ -891,8 +834,7 @@ export default function Dashboard() {
           </button>
         </div>
       ) : (
-        <div className="space-y-6">
-          
+        <div className="space-y-6">          
           {/* UPSELL: KNOWN TELEGRAM HANDLE */}
           {data?.inactive_telegram_handle && !isOtpStep && (
             <div className="bg-gradient-to-r from-[#11111a] to-[#1a1a2e] border-2 border-indigo-500/30 rounded-2xl p-4 relative overflow-hidden">
@@ -901,7 +843,7 @@ export default function Dashboard() {
               </div>
               <p className="text-xs text-indigo-300 font-bold uppercase tracking-wider mb-1">Quick Activate</p>
               <p className="text-sm text-indigo-100/80 mb-3 leading-snug">
-                Want people to find you by your Telegram handle <span className="font-bold text-white">{data.inactive_telegram_handle}</span>?
+                Want people to find you by your main Telegram handle <span className="font-bold text-white">{data.inactive_telegram_handle}</span>?
               </p>
               <button 
                 disabled={aliasLoading}
@@ -1056,6 +998,62 @@ const res = await fetch(`${import.meta.env.VITE_API_URL}/api/alias/verify`, {
     </motion.div>
   </motion.div>
 )}
+{/* --- IDENTITY VAULT SECTION (Active Aliases) --- */}
+            <div className="bg-[#0a0602] border-2 border-[#1a0c04] rounded-3xl p-6 mt-8">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5 text-orange-500" /> Identity Vault
+                  </h3>
+                  <p className="text-white/40 text-sm mt-1">Identities linked to your Orbit</p>
+                </div>
+                <button 
+                  onClick={() => setShowAliasModal(true)}
+                  className="bg-[#1a0c04] border border-[#3d1c09] text-orange-400 px-4 py-2 rounded-xl text-sm font-bold hover:bg-orange-600 hover:text-white transition-all flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" /> Add Alias
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* 🚨 We removed the hardcoded block and just dynamically map EVERYTHING! */}
+                {data?.aliases?.length > 0 ? (
+                  data.aliases.map((alias, index) => {
+                    // Identify the primary phone (usually the very first 'phone' type alias they created)
+                    const isPrimary = index === 0 && alias.type === 'phone';
+
+                    return (
+                      <div key={alias.id || index} className="bg-[#140a04] border border-[#3d1c09]/50 rounded-xl p-4 flex items-center gap-4">
+                        <div className="bg-orange-500/10 p-2 rounded-lg">
+                          {alias.type === 'telegram' ? <Send className="w-5 h-5 text-blue-400" /> : 
+                           alias.type === 'instagram' ? <Camera className="w-5 h-5 text-pink-400" /> : 
+                           <Phone className="w-5 h-5 text-orange-500" />}
+                        </div>
+                        <div>
+                          {/* 🚨 Use alias.type (Backend schema) */}
+                          <p className="text-white/40 text-xs font-bold uppercase tracking-wider">
+                            {isPrimary ? 'Primary Phone' : alias.type}
+                          </p>
+                          {/* 🚨 Use alias.value (Backend schema) */}
+                          <p className="text-white font-medium">{alias.value || "Hidden"}</p>
+                        </div>
+                        <div className="ml-auto">
+                          {alias.verified && (
+                            <span className="bg-green-500/10 text-green-400 text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider">
+                              Verified
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="bg-[#140a04] border border-dashed border-[#3d1c09] rounded-xl p-4 flex items-center justify-center text-white/30 text-sm font-medium h-full col-span-1 sm:col-span-2">
+                    No identities linked yet.
+                  </div>
+                )}
+              </div>
+            </div>
         </AnimatePresence>
       </div>
     </div>
