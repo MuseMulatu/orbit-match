@@ -4,7 +4,7 @@ import { AuthModal } from '@/components/hasab/AuthModal';
 import { Toaster } from '@/components/ui/toaster';
 import Landing from '@/pages/Landing'; // Ensure this matches your actual landing page filename
 import Dashboard from '@/pages/Dashboard';
-import Admin from '@/pages/Admin'; // Import the Admin page
+import Admin from '@/pages/Admin'; 
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   // 🚨 FIX: Use absolute truth (localStorage) to prevent race conditions on hard refresh
@@ -19,9 +19,8 @@ function AuthRedirect({ children }: { children: React.ReactNode }) {
   if (token) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }
-
 function AppRoutes() {
-  // 🚨 FIX: Grab the modal triggers from your global context
+  // Grab the modal triggers from your global context
   const { showAuthModal, setShowAuthModal } = useApp();
 
   return (
@@ -29,14 +28,17 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<AuthRedirect><Landing /></AuthRedirect>} />
         
-        {/* 🚨 FIX: Changed from /app to /dashboard to match our AuthModal redirects */}
+        {/* Changed from /app to /dashboard to match our AuthModal redirects */}
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         
+        {/* ✅ FIX: Moved the Admin route INSIDE the Routes block */}
+        <Route path="/admin" element={<Admin />} />
+
+        {/* Catch-all route should generally be at the bottom */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      <Route path="/admin" element={<Admin />} />
 
-      {/* 🚨 FIX: Pass the props so the modal ONLY opens when 'Enter Zabiya' is pressed */}
+      {/* Pass the props so the modal ONLY opens when 'Enter Zabiya' is pressed */}
       <AuthModal 
         isOpen={showAuthModal} 
         onClose={() => setShowAuthModal(false)} 
