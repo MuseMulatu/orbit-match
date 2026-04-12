@@ -235,7 +235,7 @@ export default function Dashboard() {
       } else {
         toast({ 
           title: 'Saved privately', 
-          description: 'They’ll only know if they feel the same.',
+          description: 'Tip: If they know you through a different number or username, you might not match. Add your other identities to avoid missing it.',
         });
         fetchDashboard(); 
       }
@@ -335,7 +335,8 @@ export default function Dashboard() {
                     <h3 className="text-xl font-semibold text-white tracking-wide">Add Intent</h3>
                   </div>
                   <p className="text-sm text-indigo-200/40 mb-8 font-light tracking-wide pl-1">
-                    Add someone you’re thinking about. They’ll only know if the feeling is mutual.
+                   Privately add someone you’re interested in.
+                  They’ll only find out if they choose you too — otherwise, it stays completely hidden.
                   </p>
 
                   <form onSubmit={handleAddIntent} className="flex flex-col space-y-5">
@@ -376,6 +377,37 @@ export default function Dashboard() {
                     </button>
                   </form>
                 </div>
+              </motion.div>
+{/* --- MISSED MATCH PREVENTION SLAB --- */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35 }}
+                className="group relative bg-[#140a04] border-2 border-[#3d1c09] rounded-[2rem] p-7 shadow-2xl overflow-hidden transition-all duration-500"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-orange-600/10 rounded-full blur-[40px]" />
+                
+                <h3 className="text-white font-bold tracking-wide mb-2 flex items-center gap-2">
+                  <span className="text-xl"></span> Don’t Miss a Match
+                </h3>
+                
+                <p className="text-orange-200/80 text-sm leading-relaxed mb-6 font-medium">
+                 You could both like each other — and still never match.
+If they enter your Telegram but you only added your phone number (or the other way around), the system won’t connect you.
+That means a real match… silently lost.
+Add your other identities to make sure you’re fully discoverable.
+                </p>
+                <div className="text-xs text-orange-400 mt-2">
+  ⚠️ Incomplete identity = higher chance of missed matches
+</div><div className="text-xs text-orange-300 mt-1 font-medium">
+  Coverage: {data?.aliases?.length || 1} / 3 identities connected
+</div>
+                <button 
+                  onClick={() => setShowAliasModal(true)} // 👈 FIXED
+                  className="w-full bg-[#1a0c04] border border-[#3d1c09] text-orange-400 font-bold py-3.5 rounded-xl hover:bg-orange-600 hover:text-white transition-all duration-300 cursor-pointer flex justify-center items-center gap-2 text-sm shadow-[0_4px_15px_rgba(0,0,0,0.5)]"
+                >
+                  <ShieldCheck className="w-4 h-4" /> Protect My Matches (−2 Slots)
+                </button>
               </motion.div>
 
               {/* --- ORBIT STATUS EMERALD SLAB --- */}
@@ -448,7 +480,7 @@ export default function Dashboard() {
                     </div>
                     <div>
                       <p className="text-emerald-100/70 text-sm leading-relaxed font-light">
-                        Your additions are saved privately. Waiting to see if there’s a match.
+                        Your additions are saved privately. Waiting to see if there’s a match. Tip: If they know you through a different number or username, you might not match. Add your other identities to avoid missing it.
                       </p>
                       <p className="text-emerald-400 text-xs mt-2 font-mono font-bold tracking-widest uppercase">
                         {data.active_intents_count} ACTIVE
@@ -493,31 +525,7 @@ export default function Dashboard() {
                 )}
               </motion.div>
 
-              {/* --- MISSED MATCH PREVENTION SLAB --- */}
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.35 }}
-                className="group relative bg-[#140a04] border-2 border-[#3d1c09] rounded-[2rem] p-7 shadow-2xl overflow-hidden transition-all duration-500"
-              >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-orange-600/10 rounded-full blur-[40px]" />
-                
-                <h3 className="text-white font-bold tracking-wide mb-2 flex items-center gap-2">
-                  <span className="text-xl">⚠️</span> Don’t Miss a Match
-                </h3>
-                
-                <p className="text-orange-200/80 text-sm leading-relaxed mb-6 font-medium">
-                  If they used your different number or username than the one you added, you won’t see each other — even if you both liked each other.
-                </p>
-                
-                <button 
-                  onClick={() => setShowAliasModal(true)} // 👈 FIXED
-                  className="w-full bg-[#1a0c04] border border-[#3d1c09] text-orange-400 font-bold py-3.5 rounded-xl hover:bg-orange-600 hover:text-white transition-all duration-300 cursor-pointer flex justify-center items-center gap-2 text-sm shadow-[0_4px_15px_rgba(0,0,0,0.5)]"
-                >
-                  <ShieldCheck className="w-4 h-4" /> Add Another Contact (2 Slots)
-                </button>
-              </motion.div>
-
+              
             </div>
 
             {/* RIGHT COLUMN */}
@@ -547,7 +555,7 @@ export default function Dashboard() {
                     <div className="text-6xl font-light text-white tracking-tighter flex items-baseline gap-2 drop-shadow-[0_0_15px_rgba(249,115,22,0.3)]">
                       {data?.wallet?.slots || 0}
                       <span className="text-sm font-bold tracking-widest text-orange-900 uppercase">
-                        Slots Left
+                        Matching Attempts Left
                       </span>
                     </div>
                     
@@ -562,7 +570,8 @@ export default function Dashboard() {
                   {data?.wallet?.slots !== undefined && data.wallet.slots <= 1 && (
                     <p className="text-[11px] text-red-400 font-semibold tracking-wide flex items-start gap-2 mt-4 bg-red-950/30 p-3 rounded-lg border border-red-900/50 leading-snug">
                       <span className="w-2 h-2 mt-1 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,1)]"></span>
-                      You’re down to your last chance. If they use a different number or account, you won’t appear to each other.
+                     You’re almost out of chances.
+          Add more slots to stay visible. Use your slots to add intents and connect with your matches. Each intent consumes only 1 slot until it expires or is revoked.
                     </p>
                   )}
 
@@ -734,7 +743,7 @@ export default function Dashboard() {
                   >
                     <div>
                       <p className="text-white/90 font-semibold transition">Starter</p>
-                      <p className="text-[10px] text-orange-600 uppercase tracking-widest font-bold mt-1">3 Slots</p>
+                      <p className="text-[10px] text-orange-600 uppercase tracking-widest font-bold mt-1">3 Chances to be Seen</p>
                     </div>
                     <p className={`font-mono px-3 py-1.5 rounded-xl text-xs font-bold ${
                       selectedPackage === 'basic' ? 'bg-orange-500 text-black' : 'bg-[#140a04] border border-[#3d1c09] text-orange-500'
@@ -759,7 +768,7 @@ export default function Dashboard() {
 
                     <div>
                       <p className="font-semibold text-indigo-100">Deep Space Pack</p>
-                      <p className="text-[10px] text-indigo-400 uppercase tracking-widest font-bold mt-1">6 Slots (Double)</p>
+                      <p className="text-[10px] text-indigo-400 uppercase tracking-widest font-bold mt-1">5 slots. Higher Chances + Better Match Coverage</p>
                     </div>
                     <p className={`font-mono px-3 py-1.5 rounded-xl text-xs font-bold ${
                       selectedPackage === 'premium' ? 'bg-indigo-500 text-white' : 'bg-[#0a0a0f] border border-[#1c1c28] text-indigo-300'
@@ -897,9 +906,17 @@ export default function Dashboard() {
 
       <div className="mb-6">
         <h2 className="text-2xl font-semibold text-white mb-2 flex items-center gap-2">
-          <ShieldCheck className="w-6 h-6 text-orange-500" /> Your Identities
+          <ShieldCheck className="w-6 h-6 text-orange-500" /> <span title="An alias is another way people know you (phone, Telegram, Instagram)">
+  Your Identities
+</span>
         </h2>
-        <p className="text-orange-200/60 text-sm font-medium">Add aliases (identities like your Telegram/Insta username or your other phone number) to ensure you don't miss a match. Even if your crush only knows one of your identities, they can still find and add you! </p>
+        <p className="text-orange-200/60 text-sm font-medium">Add all the ways someone might know you.
+
+People don’t always save you the same way. One person might have your phone number. Another might only know your Telegram or Instagram.
+
+If they enter a different version of you than the one you added, you won’t match — even if the feeling is mutual.
+
+Add all your other identities so you don’t miss real connections. </p>
       </div>
 
       {/* SLOT CHECKER */}
@@ -1024,7 +1041,9 @@ if(result.success) {
             /* OTP VERIFICATION STEP */
             <div className="space-y-4">
               <p className="text-sm text-white/70 text-center mb-4">
-                We sent a verification code to <span className="font-bold text-white">{aliasValue}</span> (via Telegram/SMS).
+               We need to confirm this identity belongs to you.
+
+Enter the code sent to {aliasValue} <span className="font-bold text-white">{aliasValue}</span> on your Telegram to activate it and make yourself discoverable through it..
               </p>
               
               <input 
@@ -1084,7 +1103,7 @@ const res = await fetch(`${import.meta.env.VITE_API_URL}/api/alias/verify`, {
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                    <ShieldCheck className="w-5 h-5 text-orange-500" /> Identity Vault
+                    <ShieldCheck className="w-5 h-5 text-orange-500" /> How People Find You
                   </h3>
                   <p className="text-white/40 text-sm mt-1">Identities linked to your Orbit</p>
                 </div>
