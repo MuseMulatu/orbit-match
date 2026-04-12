@@ -4,6 +4,7 @@ import { AuthModal } from '@/components/hasab/AuthModal';
 import { Toaster } from '@/components/ui/toaster';
 import Landing from '@/pages/Landing'; // Ensure this matches your actual landing page filename
 import Dashboard from '@/pages/Dashboard';
+import Admin from '@/pages/Admin'; // Import the Admin page
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   // 🚨 FIX: Use absolute truth (localStorage) to prevent race conditions on hard refresh
@@ -33,6 +34,7 @@ function AppRoutes() {
         
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <Route path="/admin" element={<Admin />} />
 
       {/* 🚨 FIX: Pass the props so the modal ONLY opens when 'Enter Zabiya' is pressed */}
       <AuthModal 
