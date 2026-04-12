@@ -920,12 +920,69 @@ If they enter a different version of you than the one you added, you won’t mat
 
 Add all your other identities so you don’t miss real connections. </p>
       </div>
+{/* 🚀 UPSELL: ALWAYS VISIBLE AT THE TOP */}
+      {data?.inactive_telegram_handle && !isOtpStep && (
+        <div className="bg-gradient-to-r from-[#11111a] to-[#1a1a2e] border-2 border-indigo-500/30 rounded-2xl p-4 relative overflow-hidden mb-6">
+          <div className="absolute top-0 right-0 p-2">
+            <Sparkles className="w-4 h-4 text-indigo-400" />
+          </div>
+          <p className="text-xs text-indigo-300 font-bold uppercase tracking-wider mb-1">Quick Activate</p>
+          <p className="text-sm text-indigo-100/80 mb-3 leading-snug">
+            Want people to find you by your main Telegram handle <span className="font-bold text-white">@{data.inactive_telegram_handle.replace('@', '')}</span>?
+          </p>
+          
+          {(data?.wallet?.slots || 0) < 2 ? (
+             <button 
+               onClick={() => { setShowAliasModal(false); setShowPaymentModal(true); }}
+               className="w-full bg-indigo-900/50 hover:bg-indigo-800 border border-indigo-500/30 text-indigo-200 py-2.5 rounded-xl font-bold text-sm transition-colors"
+             >
+               Buy 2 Slots to Activate
+             </button>
+          ) : (
+             <button 
+               disabled={aliasLoading}
+               onClick={async () => {
+                 setAliasLoading(true);
+                 setAliasError('');
+                 try {
+                   const res = await fetch(`${import.meta.env.VITE_API_URL}/api/alias/quick-activate`, {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('zabiya_token')}` },
+                     body: JSON.stringify({ telegramUsername: data.inactive_telegram_handle })
+                   });
+                   const result = await res.json();
+                   if(result.success) {
+                     setShowAliasModal(false);
+                     window.location.reload(); 
+                   } else {
+                     setAliasError(result.error || result.message);
+                   }
+                 } catch (err) {
+                   setAliasError("Failed to connect to server.");
+                 } finally {
+                   setAliasLoading(false);
+                 }
+               }}
+               className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl font-bold text-sm transition-colors shadow-lg shadow-indigo-900/20 disabled:opacity-50"
+             >
+               {aliasLoading ? "Activating..." : "Activate Now (Costs 2 Slots)"}
+             </button>
+          )}
+        </div>
+      )}
 
-      {/* SLOT CHECKER */}
+      {/* ERROR DISPLAY */}
+      {aliasError && (
+        <div className="bg-red-500/10 border border-red-500/50 text-red-400 text-xs p-3 rounded-lg text-center mb-4">
+          {aliasError}
+        </div>
+      )}
+
+      {/* SLOT CHECKER FOR THE MANUAL FORM */}
       {(data?.wallet?.slots || 0) < 2 ? (
         <div className="bg-red-950/30 border border-red-900/50 rounded-2xl p-5 text-center">
           <Zap className="w-8 h-8 text-red-500 mx-auto mb-3" />
-          <p className="text-red-200 text-sm font-medium mb-4">You need 2 slots to add a verified alias. You currently have {data?.wallet?.slots || 0}.</p>
+          <p className="text-red-200 text-sm font-medium mb-4">You need 2 slots to manually add a new identity.</p>
           <button 
             onClick={() => { setShowAliasModal(false); setShowPaymentModal(true); }}
             className="w-full bg-red-900/40 text-red-100 py-3 rounded-xl hover:bg-red-600 transition-colors text-sm font-bold"
@@ -935,58 +992,11 @@ Add all your other identities so you don’t miss real connections. </p>
         </div>
       ) : (
         <div className="space-y-6">          
-          {/* UPSELL: KNOWN TELEGRAM HANDLE */}
-          {data?.inactive_telegram_handle && !isOtpStep && (
-            <div className="bg-gradient-to-r from-[#11111a] to-[#1a1a2e] border-2 border-indigo-500/30 rounded-2xl p-4 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-2">
-                <Sparkles className="w-4 h-4 text-indigo-400" />
-              </div>
-              <p className="text-xs text-indigo-300 font-bold uppercase tracking-wider mb-1">Quick Activate</p>
-              <p className="text-sm text-indigo-100/80 mb-3 leading-snug">
-                Want people to find you by your main Telegram handle <span className="font-bold text-white">{data.inactive_telegram_handle}</span>?
-              </p>
-              <button 
-                disabled={aliasLoading}
-                onClick={async () => {
-                  setAliasLoading(true);
-                  setAliasError('');
-                  try {
-                    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/alias/quick-activate`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('zabiya_token')}` },
-                      body: JSON.stringify({ telegramUsername: data.inactive_telegram_handle })
-                    });
-                    const result = await res.json();
-                    if(result.success) {
-                      setShowAliasModal(false);
-                      window.location.reload(); // Or call your fetchDashboardData() function
-                    } else {
-                      setAliasError(result.message);
-                    }
-                  } catch (err) {
-                    setAliasError("Failed to connect to server.");
-                  } finally {
-                    setAliasLoading(false);
-                  }
-                }}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl font-bold text-sm transition-colors shadow-lg shadow-indigo-900/20 disabled:opacity-50"
-              >
-                {aliasLoading ? "Activating..." : "Activate Now (2 Slots)"}
-              </button>
-            </div>
-          )}
-
-          {aliasError && (
-            <div className="bg-red-500/10 border border-red-500/50 text-red-400 text-xs p-3 rounded-lg text-center">
-              {aliasError}
-            </div>
-          )}
-
           {/* DYNAMIC FORM: INITIAL ADD vs OTP VERIFY */}
           {!isOtpStep ? (
             <div className="space-y-4">
               <div className="text-xs text-white/40 font-bold uppercase tracking-[0.2em] flex items-center gap-2 mb-2">
-                <span className="w-full h-[1px] bg-white/10" /> OR ADD NEW <span className="w-full h-[1px] bg-white/10" />
+                <span className="w-full h-[1px] bg-white/10" /> OR ADD MANUAL <span className="w-full h-[1px] bg-white/10" />
               </div>
 
               <select 
@@ -996,7 +1006,7 @@ Add all your other identities so you don’t miss real connections. </p>
               >
                 <option value="phone">📱 Additional Phone Number</option>
                 <option value="telegram">✈️ Different Telegram Handle</option>
-                <option value="instagram">📸 Instagram Username</option>
+                <option value="instagram">📸 Instagram Username...</option>
               </select>
 
               <input 
