@@ -378,38 +378,7 @@ export default function Dashboard() {
                   </form>
                 </div>
               </motion.div>
-{/* --- MISSED MATCH PREVENTION SLAB --- */}
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.35 }}
-                className="group relative bg-[#140a04] border-2 border-[#3d1c09] rounded-[2rem] p-7 shadow-2xl overflow-hidden transition-all duration-500"
-              >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-orange-600/10 rounded-full blur-[40px]" />
-                
-                <h3 className="text-white font-bold tracking-wide mb-2 flex items-center gap-2">
-                  <span className="text-xl"></span> Don’t Miss a Match
-                </h3>
-                
-                <p className="text-orange-200/80 text-sm leading-relaxed mb-6 font-medium">
-                 You could both like each other — and still never match.
-If they enter your Telegram but you only added your phone number (or the other way around), the system won’t connect you.
-That means a real match… silently lost.
-Add your other identities to make sure you’re fully discoverable.
-                </p>
-                <div className="text-xs text-orange-400 mt-2">
-  ⚠️ Incomplete identity = higher chance of missed matches
-</div><div className="text-xs text-orange-300 mt-1 font-medium">
-  Coverage: {data?.aliases?.length || 1} / 3 identities connected
-</div>
-                <button 
-                  onClick={() => setShowAliasModal(true)} // 👈 FIXED
-                  className="w-full bg-[#1a0c04] border border-[#3d1c09] text-orange-400 font-bold py-3.5 rounded-xl hover:bg-orange-600 hover:text-white transition-all duration-300 cursor-pointer flex justify-center items-center gap-2 text-sm shadow-[0_4px_15px_rgba(0,0,0,0.5)]"
-                >
-                  <ShieldCheck className="w-4 h-4" /> Protect My Matches (−2 Slots)
-                </button>
-              </motion.div>
-
+ 
               {/* --- ORBIT STATUS EMERALD SLAB --- */}
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
@@ -423,7 +392,7 @@ Add your other identities to make sure you’re fully discoverable.
                   <div className="p-2 bg-[#0a1414] border border-[#142e2e] rounded-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
                     <ShieldCheck className="w-4 h-4 text-emerald-400" />
                   </div>
-                  <h3 className="text-white/90 font-semibold tracking-wide">Current Orbit Status</h3>
+                  <h3 className="text-white/90 font-semibold tracking-wide">Who you've added</h3>
                 </div>
                 
                 {/* ACTIVE INTENTS LIST */}
@@ -524,6 +493,7 @@ Add your other identities to make sure you’re fully discoverable.
                   </div>
                 )}
               </motion.div>
+             
 
               
             </div>
@@ -597,7 +567,7 @@ Add your other identities to make sure you’re fully discoverable.
                   <div className="p-2 bg-[#1a0a12] border border-[#3d162a] rounded-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
                     <Heart className="w-4 h-4 text-pink-500" />
                   </div>
-                  <h3 className="text-white/90 font-semibold tracking-wide">Mutual Gravity</h3>
+                  <h3 className="text-white/90 font-semibold tracking-wide">Mutual Gravity - Your Matches</h3>
                   {data?.matches && data.matches.length > 0 && (
                     <span className="text-[10px] font-bold bg-[#3d162a] border border-[#5c2240] text-pink-400 px-2 py-1 rounded-md ml-auto">
                       {data.matches.length}
@@ -661,6 +631,38 @@ Add your other identities to make sure you’re fully discoverable.
                     </p>
                   </div>
                 )}
+              </motion.div>
+
+              {/* --- MISSED MATCH PREVENTION SLAB --- */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35 }}
+                className="group relative bg-[#140a04] border-2 border-[#3d1c09] rounded-[2rem] p-7 shadow-2xl overflow-hidden transition-all duration-500"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-orange-600/10 rounded-full blur-[40px]" />
+                
+                <h3 className="text-white font-bold tracking-wide mb-2 flex items-center gap-2">
+                  <span className="text-xl"></span> Don’t Miss a Match
+                </h3>
+                
+                <p className="text-orange-200/80 text-sm leading-relaxed mb-6 font-medium">
+                 You could both like each other — and still never match.
+If they enter your Telegram but you only added your phone number (or the other way around), the system won’t connect you.
+That means a real match… silently lost.
+Add your other identities to make sure you’re fully discoverable.
+                </p>
+                <div className="text-xs text-orange-400 mt-2">
+  ⚠️ Incomplete identity = higher chance of missed matches
+</div><div className="text-xs text-orange-300 mt-1 font-medium">
+  Coverage: {data?.aliases?.length || 1} / 3 identities connected
+</div>
+                <button 
+                  onClick={() => setShowAliasModal(true)} // 👈 FIXED
+                  className="w-full bg-[#1a0c04] border border-[#3d1c09] text-orange-400 font-bold py-3.5 rounded-xl hover:bg-orange-600 hover:text-white transition-all duration-300 cursor-pointer flex justify-center items-center gap-2 text-sm shadow-[0_4px_15px_rgba(0,0,0,0.5)]"
+                >
+                  <ShieldCheck className="w-4 h-4" /> Protect My Matches (−2 Slots)
+                </button>
               </motion.div>
 
               {/* --- BLOCKED CONNECTIONS SLAB --- */}
