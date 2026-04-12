@@ -494,7 +494,56 @@ export default function Dashboard() {
                 )}
               </motion.div>
              
-
+                {/* 🚀 UPSELL: ALWAYS VISIBLE AT THE TOP */}
+      {data?.inactive_telegram_handle && !isOtpStep && (
+        <div className="bg-gradient-to-r from-[#11111a] to-[#1a1a2e] border-2 border-indigo-500/30 rounded-2xl p-4 relative overflow-hidden mb-6">
+          <div className="absolute top-0 right-0 p-2">
+            <Sparkles className="w-4 h-4 text-indigo-400" />
+          </div>
+          <p className="text-xs text-indigo-300 font-bold uppercase tracking-wider mb-1">Quick Activate</p>
+          <p className="text-sm text-indigo-100/80 mb-3 leading-snug">
+            Want people to find you by your main Telegram handle <span className="font-bold text-white">@{data.inactive_telegram_handle.replace('@', '')}</span>?
+          </p>
+          
+          {(data?.wallet?.slots || 0) < 2 ? (
+             <button 
+               onClick={() => { setShowAliasModal(false); setShowPaymentModal(true); }}
+               className="w-full bg-indigo-900/50 hover:bg-indigo-800 border border-indigo-500/30 text-indigo-200 py-2.5 rounded-xl font-bold text-sm transition-colors"
+             >
+               Buy 2 Slots to Activate
+             </button>
+          ) : (
+             <button 
+               disabled={aliasLoading}
+               onClick={async () => {
+                 setAliasLoading(true);
+                 setAliasError('');
+                 try {
+                   const res = await fetch(`${import.meta.env.VITE_API_URL}/api/alias/quick-activate`, {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('zabiya_token')}` },
+                     body: JSON.stringify({ telegramUsername: data.inactive_telegram_handle })
+                   });
+                   const result = await res.json();
+                   if(result.success) {
+                     setShowAliasModal(false);
+                     window.location.reload(); 
+                   } else {
+                     setAliasError(result.error || result.message);
+                   }
+                 } catch (err) {
+                   setAliasError("Failed to connect to server.");
+                 } finally {
+                   setAliasLoading(false);
+                 }
+               }}
+               className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl font-bold text-sm transition-colors shadow-lg shadow-indigo-900/20 disabled:opacity-50"
+             >
+               {aliasLoading ? "Activating..." : "Activate Now (Costs 2 Slots)"}
+             </button>
+          )}
+        </div>
+      )}
               
             </div>
 
@@ -661,7 +710,7 @@ Add your other identities to make sure you’re fully discoverable.
                   onClick={() => setShowAliasModal(true)} // 👈 FIXED
                   className="w-full bg-[#1a0c04] border border-[#3d1c09] text-orange-400 font-bold py-3.5 rounded-xl hover:bg-orange-600 hover:text-white transition-all duration-300 cursor-pointer flex justify-center items-center gap-2 text-sm shadow-[0_4px_15px_rgba(0,0,0,0.5)]"
                 >
-                  <ShieldCheck className="w-4 h-4" /> Protect My Matches (−2 Slots)
+                  <ShieldCheck className="w-4 h-4" /> Protect My Matches (2 Slots)
                 </button>
               </motion.div>
 
