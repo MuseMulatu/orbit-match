@@ -969,7 +969,7 @@ Add all your other identities so you don’t miss real connections. </p>
                 }}
                 className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl font-bold text-sm transition-colors shadow-lg shadow-indigo-900/20 disabled:opacity-50"
               >
-                {aliasLoading ? "Activating..." : "Activate Now (-2 Slots)"}
+                {aliasLoading ? "Activating..." : "Activate Now (2 Slots)"}
               </button>
             </div>
           )}
@@ -1034,7 +1034,7 @@ if(result.success) {
                 }}
                 className="w-full bg-[#1a0c04] border border-[#3d1c09] text-orange-400 font-bold py-3.5 rounded-xl hover:bg-orange-600 hover:text-white transition-all text-sm disabled:opacity-50"
               >
-                {aliasLoading ? "Processing..." : "Verify & Add (-2 Slots)"}
+                {aliasLoading ? "Processing..." : "Verify & Add (2 Slots)"}
               </button>
             </div>
           ) : (
